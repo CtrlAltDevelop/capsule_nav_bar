@@ -1,7 +1,7 @@
-import 'package:floating_nav_bar/floating_nav_bar.dart';
+import 'package:capsule_nav_bar/capsule_nav_bar.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// A theme with [FloatingNavBarTheme] registered, so the demo shows the bar
+/// A theme with [CapsuleNavBarTheme] registered, so the demo shows the bar
 /// wearing a host's palette rather than the scheme-derived fallback.
 ThemeData buildDemoTheme(Brightness brightness) {
   final scheme = ColorScheme.fromSeed(
@@ -13,7 +13,7 @@ ThemeData buildDemoTheme(Brightness brightness) {
     colorScheme: scheme,
     scaffoldBackgroundColor: scheme.surface,
     extensions: [
-      FloatingNavBarTheme(
+      CapsuleNavBarTheme(
         barColor: scheme.surfaceContainerLow.withValues(alpha: 0.94),
         indicatorColor: scheme.primaryContainer,
         selectedItemColor: scheme.onPrimaryContainer,

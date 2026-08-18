@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// One destination of a [FloatingNavBar].
+/// One destination of a [CapsuleNavBar].
 ///
 /// A destination is a [label] and the pair of icons drawn for it: [lineIcon]
 /// while another destination is selected, [fillIcon] while this one is.

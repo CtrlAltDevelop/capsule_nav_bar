@@ -1,4 +1,4 @@
-import 'package:floating_nav_bar/floating_nav_bar.dart';
+import 'package:capsule_nav_bar/capsule_nav_bar.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -6,7 +6,7 @@ void main() {
   Widget host(
     Widget child, {
     TextDirection direction = TextDirection.ltr,
-    FloatingNavBarTheme? theme,
+    CapsuleNavBarTheme? theme,
     double width = 390,
   }) => MaterialApp(
     theme: ThemeData(extensions: theme == null ? const [] : [theme]),
@@ -40,17 +40,17 @@ void main() {
     ),
   ];
 
-  final indicator = find.byKey(FloatingNavBar.indicatorKey);
-  final scrim = find.byKey(FloatingNavBar.scrimKey);
+  final indicator = find.byKey(CapsuleNavBar.indicatorKey);
+  final scrim = find.byKey(CapsuleNavBar.scrimKey);
 
   Rect rectOf(WidgetTester tester, Finder finder) =>
       tester.getRect(finder.first);
 
-  group('FloatingNavBar', () {
+  group('CapsuleNavBar', () {
     testWidgets('renders every label', (tester) async {
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 0,
             onDestinationSelected: (_) {},
@@ -68,7 +68,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 1,
             onDestinationSelected: (_) {},
@@ -86,7 +86,7 @@ void main() {
       final taps = <int>[];
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 0,
             onDestinationSelected: taps.add,
@@ -104,7 +104,7 @@ void main() {
       final taps = <int>[];
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 0,
             onDestinationSelected: taps.add,
@@ -123,7 +123,7 @@ void main() {
       // switching route — the bar must highlight the tap regardless.
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 0,
             onDestinationSelected: (_) {},
@@ -140,7 +140,7 @@ void main() {
 
     testWidgets('ignores an out-of-range activeIndex', (tester) async {
       Widget bar(int index) => host(
-        FloatingNavBar(
+        CapsuleNavBar(
           destinations: destinations,
           activeIndex: index,
           onDestinationSelected: (_) {},
@@ -161,7 +161,7 @@ void main() {
     testWidgets('sizes the indicator to one destination', (tester) async {
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 0,
             onDestinationSelected: (_) {},
@@ -179,7 +179,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: [...destinations, ...destinations.take(2)],
             activeIndex: 0,
             onDestinationSelected: (_) {},
@@ -197,7 +197,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 0,
             onDestinationSelected: (_) {},
@@ -214,7 +214,7 @@ void main() {
 
     testWidgets('slides the indicator leftwards under RTL', (tester) async {
       Widget bar(int index) => host(
-        FloatingNavBar(
+        CapsuleNavBar(
           destinations: destinations,
           activeIndex: index,
           onDestinationSelected: (_) {},
@@ -234,7 +234,7 @@ void main() {
     testWidgets('shrinks the bar to the width it is given', (tester) async {
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 0,
             onDestinationSelected: (_) {},
@@ -250,7 +250,7 @@ void main() {
     testWidgets('takes only the width its destinations need', (tester) async {
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 0,
             onDestinationSelected: (_) {},
@@ -266,12 +266,12 @@ void main() {
     testWidgets('draws no scrim without a scrim colour', (tester) async {
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 0,
             onDestinationSelected: (_) {},
           ),
-          theme: const FloatingNavBarTheme(
+          theme: const CapsuleNavBarTheme(
             barColor: Color(0xFFFFFFFF),
             indicatorColor: Color(0xFFEEEEEE),
             selectedItemColor: Color(0xFF000000),
@@ -288,12 +288,12 @@ void main() {
     ) async {
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 0,
             onDestinationSelected: (_) {},
           ),
-          theme: const FloatingNavBarTheme(
+          theme: const CapsuleNavBarTheme(
             barColor: Color(0xFFFFFFFF),
             indicatorColor: Color(0xFFEEEEEE),
             selectedItemColor: Color(0xFF000000),
@@ -309,7 +309,7 @@ void main() {
     testWidgets('drops the scrim for showScrim: false', (tester) async {
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 0,
             onDestinationSelected: (_) {},
@@ -328,7 +328,7 @@ void main() {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: destinations,
             activeIndex: 1,
             onDestinationSelected: (_) {},
@@ -355,7 +355,7 @@ void main() {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(
         host(
-          FloatingNavBar(
+          CapsuleNavBar(
             destinations: const [
               NavBarDestination(
                 label: 'Acct',
@@ -407,8 +407,8 @@ void main() {
     });
   });
 
-  group('FloatingNavBarTheme', () {
-    const theme = FloatingNavBarTheme(
+  group('CapsuleNavBarTheme', () {
+    const theme = CapsuleNavBarTheme(
       barColor: Color(0xFF111111),
       indicatorColor: Color(0xFF222222),
       selectedItemColor: Color(0xFF333333),
@@ -459,12 +459,12 @@ void main() {
     });
 
     testWidgets('of falls back to a scheme-derived palette', (tester) async {
-      late FloatingNavBarTheme resolved;
+      late CapsuleNavBarTheme resolved;
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
             builder: (context) {
-              resolved = FloatingNavBarTheme.of(context);
+              resolved = CapsuleNavBarTheme.of(context);
               return const SizedBox();
             },
           ),
@@ -476,13 +476,13 @@ void main() {
     });
 
     testWidgets('of returns the registered extension', (tester) async {
-      late FloatingNavBarTheme resolved;
+      late CapsuleNavBarTheme resolved;
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(extensions: const [theme]),
           home: Builder(
             builder: (context) {
-              resolved = FloatingNavBarTheme.of(context);
+              resolved = CapsuleNavBarTheme.of(context);
               return const SizedBox();
             },
           ),

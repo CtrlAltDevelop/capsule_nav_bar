@@ -7,10 +7,10 @@
 // pubspec.yaml's screenshots section.
 import 'dart:io';
 
-import 'package:floating_nav_bar/floating_nav_bar.dart';
-import 'package:floating_nav_bar_example/demo_content.dart';
-import 'package:floating_nav_bar_example/demo_destinations.dart';
-import 'package:floating_nav_bar_example/demo_theme.dart';
+import 'package:capsule_nav_bar/capsule_nav_bar.dart';
+import 'package:capsule_nav_bar_example/demo_content.dart';
+import 'package:capsule_nav_bar_example/demo_destinations.dart';
+import 'package:capsule_nav_bar_example/demo_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -60,7 +60,7 @@ Widget _canvas(List<Widget> children) => MaterialApp(
 /// The bottom of a page: content running under the bar, and the bar over it.
 ///
 /// [brightness] applies a whole theme rather than a palette, so the strip shows
-/// the bar picking its own `FloatingNavBarTheme` out of the ambient one.
+/// the bar picking its own `CapsuleNavBarTheme` out of the ambient one.
 Widget _strip({
   required Brightness brightness,
   required int activeIndex,
@@ -84,7 +84,7 @@ Widget _strip({
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: FloatingNavBar(
+                child: CapsuleNavBar(
                   destinations: demoDestinations,
                   activeIndex: activeIndex,
                   onDestinationSelected: (_) {},
@@ -101,7 +101,7 @@ Widget _strip({
 /// The bar with nothing behind it, for showing where the pill sits.
 Widget _bareBar(int activeIndex) => SizedBox(
   width: _stripWidth,
-  child: FloatingNavBar(
+  child: CapsuleNavBar(
     destinations: demoDestinations,
     activeIndex: activeIndex,
     onDestinationSelected: (_) {},

@@ -1,11 +1,11 @@
-name: floating_nav_bar
+name: capsule_nav_bar
 description: >-
   A bottom navigation bar that floats over the content as a rounded capsule,
   its selection marked by a pill sliding between destinations.
 version: 1.0.0
 homepage: https://github.com/CtrlAltDevelop
-repository: https://github.com/CtrlAltDevelop/floating_nav_bar
-issue_tracker: https://github.com/CtrlAltDevelop/floating_nav_bar/issues
+repository: https://github.com/CtrlAltDevelop/capsule_nav_bar
+issue_tracker: https://github.com/CtrlAltDevelop/capsule_nav_bar/issues
 
 topics:
   - navigation-bar

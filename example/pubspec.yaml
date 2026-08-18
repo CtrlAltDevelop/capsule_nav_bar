@@ -1,5 +1,5 @@
-name: floating_nav_bar_example
-description: Demonstrates floating_nav_bar.
+name: capsule_nav_bar_example
+description: Demonstrates capsule_nav_bar.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  floating_nav_bar:
+  capsule_nav_bar:
     path: ../
   material_ui: ^1.0.0
 

@@ -10,9 +10,9 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:floating_nav_bar/floating_nav_bar.dart';
-import 'package:floating_nav_bar_example/demo_destinations.dart';
-import 'package:floating_nav_bar_example/demo_theme.dart';
+import 'package:capsule_nav_bar/capsule_nav_bar.dart';
+import 'package:capsule_nav_bar_example/demo_destinations.dart';
+import 'package:capsule_nav_bar_example/demo_theme.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -106,7 +106,7 @@ void main() {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    child: FloatingNavBar(
+                    child: CapsuleNavBar(
                       destinations: demoDestinations,
                       activeIndex: index,
                       onDestinationSelected: (i) => setState(() => index = i),

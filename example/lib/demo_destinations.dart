@@ -1,4 +1,4 @@
-import 'package:floating_nav_bar/floating_nav_bar.dart';
+import 'package:capsule_nav_bar/capsule_nav_bar.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The destinations every demo, screenshot and recording shares.

@@ -1,22 +1,22 @@
 import 'package:material_ui/material_ui.dart';
 
-/// Everything a [FloatingNavBar] needs to paint itself.
+/// Everything a [CapsuleNavBar] needs to paint itself.
 ///
 /// Register it as a [ThemeExtension] so the bar follows your app's light and
 /// dark themes:
 ///
 /// ```dart
 /// MaterialApp(
-///   theme: ThemeData(extensions: [FloatingNavBarTheme.fromScheme(scheme)]),
+///   theme: ThemeData(extensions: [CapsuleNavBarTheme.fromScheme(scheme)]),
 /// );
 /// ```
 ///
-/// When no extension is registered, [FloatingNavBarTheme.of] derives a usable
+/// When no extension is registered, [CapsuleNavBarTheme.of] derives a usable
 /// palette from the ambient [ColorScheme], so the bar looks reasonable with no
 /// setup at all.
 @immutable
-class FloatingNavBarTheme extends ThemeExtension<FloatingNavBarTheme> {
-  const FloatingNavBarTheme({
+class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
+  const CapsuleNavBarTheme({
     required this.barColor,
     required this.indicatorColor,
     required this.selectedItemColor,
@@ -135,17 +135,17 @@ class FloatingNavBarTheme extends ThemeExtension<FloatingNavBarTheme> {
   /// Height of that scrim, measured from the bottom of the bar's own space.
   final double scrimHeight;
 
-  /// The registered [FloatingNavBarTheme], or one derived from the ambient
+  /// The registered [CapsuleNavBarTheme], or one derived from the ambient
   /// [ColorScheme] when the host has not registered an extension.
-  static FloatingNavBarTheme of(BuildContext context) {
+  static CapsuleNavBarTheme of(BuildContext context) {
     final theme = Theme.of(context);
-    return theme.extension<FloatingNavBarTheme>() ??
+    return theme.extension<CapsuleNavBarTheme>() ??
         fromScheme(theme.colorScheme);
   }
 
   /// A palette derived from [scheme]: a tinted pill on a translucent surface.
-  static FloatingNavBarTheme fromScheme(ColorScheme scheme) =>
-      FloatingNavBarTheme(
+  static CapsuleNavBarTheme fromScheme(ColorScheme scheme) =>
+      CapsuleNavBarTheme(
         barColor: scheme.surfaceContainer.withValues(alpha: 0.8),
         indicatorColor: scheme.primaryContainer,
         selectedItemColor: scheme.onPrimaryContainer,
@@ -186,7 +186,7 @@ class FloatingNavBarTheme extends ThemeExtension<FloatingNavBarTheme> {
       selected ? selectedItemColor : unselectedItemColor;
 
   @override
-  FloatingNavBarTheme copyWith({
+  CapsuleNavBarTheme copyWith({
     Color? barColor,
     Color? indicatorColor,
     Color? selectedItemColor,
@@ -209,7 +209,7 @@ class FloatingNavBarTheme extends ThemeExtension<FloatingNavBarTheme> {
     double? iconLabelSpacing,
     Color? scrimColor,
     double? scrimHeight,
-  }) => FloatingNavBarTheme(
+  }) => CapsuleNavBarTheme(
     barColor: barColor ?? this.barColor,
     indicatorColor: indicatorColor ?? this.indicatorColor,
     selectedItemColor: selectedItemColor ?? this.selectedItemColor,
@@ -235,9 +235,9 @@ class FloatingNavBarTheme extends ThemeExtension<FloatingNavBarTheme> {
   );
 
   @override
-  FloatingNavBarTheme lerp(FloatingNavBarTheme? other, double t) {
+  CapsuleNavBarTheme lerp(CapsuleNavBarTheme? other, double t) {
     if (other == null) return this;
-    return FloatingNavBarTheme(
+    return CapsuleNavBarTheme(
       barColor: Color.lerp(barColor, other.barColor, t) ?? barColor,
       indicatorColor:
           Color.lerp(indicatorColor, other.indicatorColor, t) ?? indicatorColor,

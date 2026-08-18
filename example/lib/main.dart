@@ -1,4 +1,4 @@
-import 'package:floating_nav_bar/floating_nav_bar.dart';
+import 'package:capsule_nav_bar/capsule_nav_bar.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'demo_content.dart';
@@ -21,7 +21,7 @@ class _ExampleAppState extends State<ExampleApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'floating_nav_bar',
+      title: 'capsule_nav_bar',
       debugShowCheckedModeBanner: false,
       theme: buildDemoTheme(Brightness.light),
       darkTheme: buildDemoTheme(Brightness.dark),
@@ -89,7 +89,7 @@ class _ExamplePageState extends State<ExamplePage> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: FloatingNavBar(
+            child: CapsuleNavBar(
               destinations: demoDestinations,
               activeIndex: _index,
               onDestinationSelected: (i) => setState(() => _index = i),

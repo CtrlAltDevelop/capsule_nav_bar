@@ -2,11 +2,11 @@ import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
 
-import 'floating_nav_bar_theme.dart';
+import 'capsule_nav_bar_theme.dart';
 import 'nav_bar_destination.dart';
 
 /// The default duration of the indicator slide.
-const Duration kFloatingNavBarDuration = Duration(milliseconds: 300);
+const Duration kCapsuleNavBarDuration = Duration(milliseconds: 300);
 
 /// A bottom navigation bar that floats over the content as a rounded capsule,
 /// its selection marked by a pill that slides between destinations.
@@ -14,10 +14,10 @@ const Duration kFloatingNavBarDuration = Duration(milliseconds: 300);
 /// The bar draws a destination's filled icon while it is selected and its line
 /// icon otherwise, and fades a scrim up behind itself so content scrolling
 /// underneath does not collide with it. Colours, shapes and metrics come from
-/// [FloatingNavBarTheme]; per-instance overrides on the widget win over it.
+/// [CapsuleNavBarTheme]; per-instance overrides on the widget win over it.
 ///
 /// ```dart
-/// FloatingNavBar(
+/// CapsuleNavBar(
 ///   destinations: const [
 ///     NavBarDestination(
 ///       label: 'Home',
@@ -47,13 +47,13 @@ const Duration kFloatingNavBarDuration = Duration(milliseconds: 300);
 ///
 /// The indicator is aligned along the text direction, so the bar reads
 /// correctly under [TextDirection.rtl] with no extra work.
-class FloatingNavBar extends StatefulWidget {
-  const FloatingNavBar({
+class CapsuleNavBar extends StatefulWidget {
+  const CapsuleNavBar({
     super.key,
     required this.destinations,
     required this.activeIndex,
     required this.onDestinationSelected,
-    this.duration = kFloatingNavBarDuration,
+    this.duration = kCapsuleNavBarDuration,
     this.curve = Curves.easeInOut,
     this.showScrim = true,
     this.height,
@@ -97,68 +97,68 @@ class FloatingNavBar extends StatefulWidget {
   final Curve curve;
 
   /// Whether to fade a scrim up behind the bar. Needs
-  /// [FloatingNavBarTheme.scrimColor] to be set; without it nothing is drawn.
+  /// [CapsuleNavBarTheme.scrimColor] to be set; without it nothing is drawn.
   final bool showScrim;
 
-  /// Overrides [FloatingNavBarTheme.height].
+  /// Overrides [CapsuleNavBarTheme.height].
   final double? height;
 
-  /// Overrides [FloatingNavBarTheme.itemWidth].
+  /// Overrides [CapsuleNavBarTheme.itemWidth].
   final double? itemWidth;
 
-  /// Overrides [FloatingNavBarTheme.margin].
+  /// Overrides [CapsuleNavBarTheme.margin].
   final EdgeInsetsGeometry? margin;
 
-  /// Overrides [FloatingNavBarTheme.barPadding].
+  /// Overrides [CapsuleNavBarTheme.barPadding].
   final EdgeInsetsGeometry? barPadding;
 
-  /// Overrides [FloatingNavBarTheme.barRadius]. Any [BorderRadiusGeometry]
+  /// Overrides [CapsuleNavBarTheme.barRadius]. Any [BorderRadiusGeometry]
   /// works, [BorderRadiusDirectional] included.
   final BorderRadiusGeometry? barRadius;
 
-  /// Overrides [FloatingNavBarTheme.indicatorRadius], on the same terms.
+  /// Overrides [CapsuleNavBarTheme.indicatorRadius], on the same terms.
   final BorderRadiusGeometry? indicatorRadius;
 
-  /// Overrides [FloatingNavBarTheme.barShape], and with it [barRadius].
+  /// Overrides [CapsuleNavBarTheme.barShape], and with it [barRadius].
   ///
   /// Any [ShapeBorder] at all, which is how a host brings its own corner
   /// geometry — a `StadiumBorder`, or a squircle from a package such as
   /// `figma_squircle` — without this package depending on it.
   final ShapeBorder? barShape;
 
-  /// Overrides [FloatingNavBarTheme.indicatorShape], and with it
+  /// Overrides [CapsuleNavBarTheme.indicatorShape], and with it
   /// [indicatorRadius]. Any [ShapeBorder], as for [barShape].
   final ShapeBorder? indicatorShape;
 
-  /// Overrides [FloatingNavBarTheme.labelStyle].
+  /// Overrides [CapsuleNavBarTheme.labelStyle].
   final TextStyle? labelStyle;
 
-  /// Overrides [FloatingNavBarTheme.selectedLabelStyle].
+  /// Overrides [CapsuleNavBarTheme.selectedLabelStyle].
   final TextStyle? selectedLabelStyle;
 
-  /// Overrides [FloatingNavBarTheme.barColor].
+  /// Overrides [CapsuleNavBarTheme.barColor].
   final Color? barColor;
 
-  /// Overrides [FloatingNavBarTheme.indicatorColor].
+  /// Overrides [CapsuleNavBarTheme.indicatorColor].
   final Color? indicatorColor;
 
-  /// Overrides [FloatingNavBarTheme.selectedItemColor].
+  /// Overrides [CapsuleNavBarTheme.selectedItemColor].
   final Color? selectedItemColor;
 
-  /// Overrides [FloatingNavBarTheme.unselectedItemColor].
+  /// Overrides [CapsuleNavBarTheme.unselectedItemColor].
   final Color? unselectedItemColor;
 
-  /// Overrides [FloatingNavBarTheme.scrimColor].
+  /// Overrides [CapsuleNavBarTheme.scrimColor].
   final Color? scrimColor;
 
   /// Screen-reader label for the bar as a whole.
   final String? semanticLabel;
 
   /// Key on the sliding indicator, so host tests can find and measure it.
-  static const Key indicatorKey = Key('floating_nav_bar.indicator');
+  static const Key indicatorKey = Key('capsule_nav_bar.indicator');
 
   /// Key on the scrim behind the bar, for the same reason.
-  static const Key scrimKey = Key('floating_nav_bar.scrim');
+  static const Key scrimKey = Key('capsule_nav_bar.scrim');
 
   /// Where the indicator sits along the bar's main axis, from `-1` (start) to
   /// `1` (end).
@@ -166,14 +166,14 @@ class FloatingNavBar extends StatefulWidget {
       count < 2 ? 0 : -1 + 2 * index / (count - 1);
 
   @override
-  State<FloatingNavBar> createState() => _FloatingNavBarState();
+  State<CapsuleNavBar> createState() => _CapsuleNavBarState();
 }
 
-class _FloatingNavBarState extends State<FloatingNavBar> {
+class _CapsuleNavBarState extends State<CapsuleNavBar> {
   late int _activeIndex = widget.activeIndex;
 
   @override
-  void didUpdateWidget(FloatingNavBar oldWidget) {
+  void didUpdateWidget(CapsuleNavBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     // An out-of-range index — the `-1` reported while a router sits between
     // branches — is ignored, so the highlight never blinks off mid-transition.
@@ -192,8 +192,8 @@ class _FloatingNavBarState extends State<FloatingNavBar> {
   }
 
   /// The theme, with this widget's per-instance overrides applied.
-  FloatingNavBarTheme _theme(BuildContext context) =>
-      FloatingNavBarTheme.of(context).copyWith(
+  CapsuleNavBarTheme _theme(BuildContext context) =>
+      CapsuleNavBarTheme.of(context).copyWith(
         height: widget.height,
         itemWidth: widget.itemWidth,
         margin: widget.margin,
@@ -271,7 +271,7 @@ class _Scrim extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      key: FloatingNavBar.scrimKey,
+      key: CapsuleNavBar.scrimKey,
       left: 0,
       right: 0,
       bottom: 0,
@@ -303,7 +303,7 @@ class _Bar extends StatelessWidget {
     required this.width,
   });
 
-  final FloatingNavBarTheme theme;
+  final CapsuleNavBarTheme theme;
   final List<NavBarDestination> destinations;
   final int activeIndex;
   final ValueChanged<int> onTap;
@@ -335,7 +335,7 @@ class _Bar extends StatelessWidget {
                 duration: duration,
                 curve: curve,
                 width: itemWidth,
-                alignment: FloatingNavBar.indicatorAlignment(
+                alignment: CapsuleNavBar.indicatorAlignment(
                   activeIndex,
                   destinations.length,
                 ),
@@ -372,7 +372,7 @@ class _Indicator extends StatelessWidget {
     required this.alignment,
   });
 
-  final FloatingNavBarTheme theme;
+  final CapsuleNavBarTheme theme;
   final Duration duration;
   final Curve curve;
   final double width;
@@ -387,7 +387,7 @@ class _Indicator extends StatelessWidget {
           curve: curve,
           alignment: AlignmentDirectional(alignment, 0),
           child: SizedBox(
-            key: FloatingNavBar.indicatorKey,
+            key: CapsuleNavBar.indicatorKey,
             width: width,
             height: double.infinity,
             child: DecoratedBox(
@@ -414,7 +414,7 @@ class _DestinationTile extends StatelessWidget {
   });
 
   final NavBarDestination destination;
-  final FloatingNavBarTheme theme;
+  final CapsuleNavBarTheme theme;
   final TextTheme textTheme;
   final bool selected;
   final VoidCallback onTap;
