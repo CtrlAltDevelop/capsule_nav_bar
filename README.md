@@ -1,4 +1,4 @@
-# floating_nav_bar
+# capsule_nav_bar
 
 A bottom navigation bar that **floats over the content** as a rounded capsule,
 its selection marked by a **pill that slides** between destinations. Each
@@ -28,14 +28,14 @@ filled icon, the rest in their line icon:
 ## Install
 
 ```bash
-flutter pub add floating_nav_bar
+flutter pub add capsule_nav_bar
 ```
 
 Or add it to `pubspec.yaml` yourself — it is a runtime dependency:
 
 ```yaml
 dependencies:
-  floating_nav_bar: ^1.0.0
+  capsule_nav_bar: ^1.0.0
   material_ui: ^1.0.0
 ```
 
@@ -51,7 +51,7 @@ The bar is driven by you: it reports the tapped index and you decide what that
 means.
 
 ```dart
-FloatingNavBar(
+CapsuleNavBar(
   destinations: const [
     NavBarDestination(
       label: 'Home',
@@ -91,7 +91,7 @@ Scaffold(
         left: 0,
         right: 0,
         bottom: 0,
-        child: FloatingNavBar(...),
+        child: CapsuleNavBar(...),
       ),
     ],
   ),
@@ -110,7 +110,7 @@ the touch even while the branch switch is in flight, and an out-of-range
 highlight where it is instead of blinking it off.
 
 ```dart
-FloatingNavBar(
+CapsuleNavBar(
   destinations: destinations,
   activeIndex: shell.currentIndex,
   // Re-tapping the active destination resets that branch to its root.
@@ -121,14 +121,14 @@ FloatingNavBar(
 
 ## Theming
 
-Register `FloatingNavBarTheme` as a `ThemeExtension` and every bar in the app
+Register `CapsuleNavBarTheme` as a `ThemeExtension` and every bar in the app
 follows your light and dark themes:
 
 ```dart
 MaterialApp(
   theme: ThemeData(
     extensions: [
-      FloatingNavBarTheme(
+      CapsuleNavBarTheme(
         barColor: palette.surface.withValues(alpha: 0.8),
         indicatorColor: palette.primaryLight,
         selectedItemColor: palette.primary,
@@ -145,7 +145,7 @@ MaterialApp(
 Anything on the theme can also be set per instance, and the instance wins:
 
 ```dart
-FloatingNavBar(
+CapsuleNavBar(
   destinations: destinations,
   activeIndex: _index,
   onDestinationSelected: _onSelected,
@@ -175,7 +175,7 @@ For corner geometry the framework does not ship, hand over a whole
 `ShapeBorder` and keep that dependency in your own pubspec:
 
 ```dart
-FloatingNavBarTheme(
+CapsuleNavBarTheme(
   // …
   barShape: SmoothRectangleBorder(
     borderRadius: SmoothBorderRadius(cornerRadius: 32, cornerSmoothing: 1),
