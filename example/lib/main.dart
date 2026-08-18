@@ -60,6 +60,7 @@ class ExamplePage extends StatefulWidget {
 
 class _ExamplePageState extends State<ExamplePage> {
   int _index = 0;
+  bool _glass = false;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +78,11 @@ class _ExamplePageState extends State<ExamplePage> {
             icon: const Icon(Icons.swap_horiz),
             onPressed: widget.onToggleDirection,
           ),
+          IconButton(
+            tooltip: _glass ? 'Glass on' : 'Glass off',
+            icon: Icon(_glass ? Icons.blur_on : Icons.blur_off),
+            onPressed: () => setState(() => _glass = !_glass),
+          ),
         ],
       ),
       // The bar overlaps the content, so it goes in a Stack over it rather
@@ -93,6 +99,17 @@ class _ExamplePageState extends State<ExamplePage> {
               destinations: demoDestinations,
               activeIndex: _index,
               onDestinationSelected: (i) => setState(() => _index = i),
+              glass: _glass,
+              // The demo theme's bar is nearly opaque, which would hide the
+              // frost — a glass bar has to let what is behind it through.
+              barColor: _glass
+                  ? Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerLow.withValues(alpha: 0.55)
+                  : null,
+              // The scrim would fill in exactly what the glass is there to
+              // show, so it stands down while the frost is on.
+              showScrim: !_glass,
               semanticLabel: 'Main navigation',
             ),
           ),

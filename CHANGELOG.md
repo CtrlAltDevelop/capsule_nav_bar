@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.1.0
+
+- `glass` — an opt-in backdrop blur behind the bar, for the frosted look, with
+  `glassBlur` for its sigma. Off by default, since a `BackdropFilter` is not
+  free. On the theme and per instance, like every other knob.
+- The blur is drawn inside the bar's own clip, so the frost stops at the
+  capsule's edge, and the fill is painted *over* it — frosted glass is a
+  translucent sheet laid on a blurred backdrop, where a fill painted underneath
+  would be blurred along with the content and read as a smear. The border rides
+  on that same layer, so it stays a hairline, while `barShadows` are painted
+  outside the clip and are left alone by the blur.
+- `barGradient` — the bar's fill as a gradient, for the diagonal sheen a glass
+  surface catches. Wins over `barColor`.
+- `CapsuleNavBar.glassKey`, on the backdrop filter, so a host can assert the
+  frost is there.
+
 ## 1.0.0
 
 - First release.

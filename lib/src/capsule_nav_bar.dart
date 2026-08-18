@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:material_ui/material_ui.dart';
 
@@ -13,7 +14,8 @@ const Duration kCapsuleNavBarDuration = Duration(milliseconds: 300);
 ///
 /// The bar draws a destination's filled icon while it is selected and its line
 /// icon otherwise, and fades a scrim up behind itself so content scrolling
-/// underneath does not collide with it. Colours, shapes and metrics come from
+/// underneath does not collide with it. Set [glass] and it frosts what passes
+/// beneath it as well. Colours, shapes and metrics come from
 /// [CapsuleNavBarTheme]; per-instance overrides on the widget win over it.
 ///
 /// ```dart
@@ -56,6 +58,8 @@ class CapsuleNavBar extends StatefulWidget {
     this.duration = kCapsuleNavBarDuration,
     this.curve = Curves.easeInOut,
     this.showScrim = true,
+    this.glass,
+    this.glassBlur,
     this.height,
     this.itemWidth,
     this.margin,
@@ -67,6 +71,7 @@ class CapsuleNavBar extends StatefulWidget {
     this.labelStyle,
     this.selectedLabelStyle,
     this.barColor,
+    this.barGradient,
     this.indicatorColor,
     this.selectedItemColor,
     this.unselectedItemColor,
@@ -99,6 +104,13 @@ class CapsuleNavBar extends StatefulWidget {
   /// Whether to fade a scrim up behind the bar. Needs
   /// [CapsuleNavBarTheme.scrimColor] to be set; without it nothing is drawn.
   final bool showScrim;
+
+  /// Overrides [CapsuleNavBarTheme.glass] — whether the bar frosts the content
+  /// behind it. Needs a translucent [barColor] to show through.
+  final bool? glass;
+
+  /// Overrides [CapsuleNavBarTheme.glassBlur].
+  final double? glassBlur;
 
   /// Overrides [CapsuleNavBarTheme.height].
   final double? height;
@@ -139,6 +151,9 @@ class CapsuleNavBar extends StatefulWidget {
   /// Overrides [CapsuleNavBarTheme.barColor].
   final Color? barColor;
 
+  /// Overrides [CapsuleNavBarTheme.barGradient], and with it [barColor].
+  final Gradient? barGradient;
+
   /// Overrides [CapsuleNavBarTheme.indicatorColor].
   final Color? indicatorColor;
 
@@ -159,6 +174,10 @@ class CapsuleNavBar extends StatefulWidget {
 
   /// Key on the scrim behind the bar, for the same reason.
   static const Key scrimKey = Key('capsule_nav_bar.scrim');
+
+  /// Key on the backdrop filter drawn when the bar is in its glass mode, so a
+  /// host can assert the frost is (or is not) there.
+  static const Key glassKey = Key('capsule_nav_bar.glass');
 
   /// Where the indicator sits along the bar's main axis, from `-1` (start) to
   /// `1` (end).
@@ -194,6 +213,8 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
   /// The theme, with this widget's per-instance overrides applied.
   CapsuleNavBarTheme _theme(BuildContext context) =>
       CapsuleNavBarTheme.of(context).copyWith(
+        glass: widget.glass,
+        glassBlur: widget.glassBlur,
         height: widget.height,
         itemWidth: widget.itemWidth,
         margin: widget.margin,
@@ -205,6 +226,7 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
         labelStyle: widget.labelStyle,
         selectedLabelStyle: widget.selectedLabelStyle,
         barColor: widget.barColor,
+        barGradient: widget.barGradient,
         indicatorColor: widget.indicatorColor,
         selectedItemColor: widget.selectedItemColor,
         unselectedItemColor: widget.unselectedItemColor,
@@ -315,16 +337,8 @@ class _Bar extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      width: width,
-      height: theme.height,
+    Widget content = Padding(
       padding: theme.barPadding,
-      clipBehavior: Clip.antiAlias,
-      decoration: ShapeDecoration(
-        color: theme.barColor,
-        shape: theme.resolvedBarShape,
-        shadows: theme.barShadows,
-      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final itemWidth = constraints.maxWidth / destinations.length;
@@ -357,6 +371,59 @@ class _Bar extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+
+    // Without the frost the bar is one decorated, clipped box.
+    if (!theme.glass) {
+      return Container(
+        width: width,
+        height: theme.height,
+        clipBehavior: Clip.antiAlias,
+        decoration: ShapeDecoration(
+          color: theme.barColor,
+          gradient: theme.barGradient,
+          shape: theme.resolvedBarShape,
+          shadows: theme.barShadows,
+        ),
+        child: content,
+      );
+    }
+
+    final shape = theme.resolvedBarShape;
+
+    return Container(
+      width: width,
+      height: theme.height,
+      // Clip and shadows only. The shadows fall outside the clip, so the blur
+      // below cannot smear them, and the fill is deliberately not painted here
+      // — see below. The border comes off this copy for the same reason: it is
+      // drawn crisply over the frost instead of through it.
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        shape: shape is OutlinedBorder
+            ? shape.copyWith(side: BorderSide.none)
+            : shape,
+        shadows: theme.barShadows,
+      ),
+      child: BackdropFilter(
+        key: CapsuleNavBar.glassKey,
+        filter: ImageFilter.blur(
+          sigmaX: theme.glassBlur,
+          sigmaY: theme.glassBlur,
+        ),
+        // The fill sits *over* the blur, not under it: frosted glass is a
+        // translucent sheet laid on a blurred backdrop. Painting it first
+        // would instead blur the fill along with the content and read as a
+        // smear. The border rides on the same layer, so it stays a hairline.
+        child: DecoratedBox(
+          decoration: ShapeDecoration(
+            color: theme.barGradient == null ? theme.barColor : null,
+            gradient: theme.barGradient,
+            shape: shape,
+          ),
+          child: content,
+        ),
       ),
     );
   }

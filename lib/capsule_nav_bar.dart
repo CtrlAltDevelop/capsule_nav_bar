@@ -22,7 +22,8 @@
 ///
 /// Colours, shapes and metrics come from [CapsuleNavBarTheme], registered as a
 /// `ThemeExtension`; with none registered the bar derives a palette from the
-/// ambient `ColorScheme`.
+/// ambient `ColorScheme`. `glass` puts a backdrop blur behind a translucent
+/// bar, for the frosted look.
 library;
 
 export 'src/capsule_nav_bar.dart';

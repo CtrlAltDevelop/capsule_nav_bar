@@ -374,6 +374,190 @@ void main() {
     });
   });
 
+  group('glass', () {
+    final glass = find.byKey(CapsuleNavBar.glassKey);
+
+    testWidgets('draws no backdrop filter by default', (tester) async {
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: (_) {},
+          ),
+        ),
+      );
+
+      expect(glass, findsNothing);
+    });
+
+    testWidgets('frosts the bar when the theme asks for it', (tester) async {
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: (_) {},
+          ),
+          theme: const CapsuleNavBarTheme(
+            barColor: Color(0x99111111),
+            indicatorColor: Color(0xFF222222),
+            selectedItemColor: Color(0xFF333333),
+            unselectedItemColor: Color(0xFF444444),
+            glass: true,
+            glassBlur: 24,
+          ),
+        ),
+      );
+
+      expect(glass, findsOneWidget);
+      expect(
+        tester.widget<BackdropFilter>(glass).filter.toString(),
+        contains('24.0'),
+      );
+    });
+
+    testWidgets('the instance wins over the theme, both ways', (tester) async {
+      const frosted = CapsuleNavBarTheme(
+        barColor: Color(0x99111111),
+        indicatorColor: Color(0xFF222222),
+        selectedItemColor: Color(0xFF333333),
+        unselectedItemColor: Color(0xFF444444),
+        glass: true,
+      );
+
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: (_) {},
+            glass: false,
+          ),
+          theme: frosted,
+        ),
+      );
+      expect(glass, findsNothing);
+
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: (_) {},
+            glass: true,
+            glassBlur: 8,
+          ),
+        ),
+      );
+      expect(glass, findsOneWidget);
+      expect(
+        tester.widget<BackdropFilter>(glass).filter.toString(),
+        contains('8.0'),
+      );
+    });
+
+    testWidgets('paints the fill over the blur, not under it', (tester) async {
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: (_) {},
+            glass: true,
+            barColor: const Color(0x99111111),
+          ),
+        ),
+      );
+
+      // Frosted glass is a translucent sheet laid *on* a blurred backdrop.
+      // Painting the fill first would blur it along with the content behind.
+      final fill = find
+          .descendant(of: glass, matching: find.byType(DecoratedBox))
+          .first;
+      final decoration = tester.widget<DecoratedBox>(fill).decoration;
+      expect(decoration, isA<ShapeDecoration>());
+      expect((decoration as ShapeDecoration).color, const Color(0x99111111));
+    });
+
+    testWidgets('a gradient fill wins over the colour', (tester) async {
+      const sheen = LinearGradient(
+        colors: [Color(0xB8FFFFFF), Color(0x6BFFFFFF)],
+      );
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: (_) {},
+            glass: true,
+            barColor: const Color(0x99111111),
+            barGradient: sheen,
+          ),
+        ),
+      );
+
+      final fill = find
+          .descendant(of: glass, matching: find.byType(DecoratedBox))
+          .first;
+      final decoration =
+          tester.widget<DecoratedBox>(fill).decoration as ShapeDecoration;
+      expect(decoration.gradient, sheen);
+      // ShapeDecoration takes one or the other, never both.
+      expect(decoration.color, isNull);
+    });
+
+    testWidgets('keeps its shadows outside the blur', (tester) async {
+      const shadows = [BoxShadow(color: Color(0x33000000), blurRadius: 30)];
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: (_) {},
+            glass: true,
+          ),
+          theme: const CapsuleNavBarTheme(
+            barColor: Color(0x99111111),
+            indicatorColor: Color(0xFF222222),
+            selectedItemColor: Color(0xFF333333),
+            unselectedItemColor: Color(0xFF444444),
+            barShadows: shadows,
+          ),
+        ),
+      );
+
+      // The shadows ride on the box that owns the clip, above the filter.
+      final outer = find
+          .ancestor(of: glass, matching: find.byType(DecoratedBox))
+          .first;
+      final decoration =
+          tester.widget<DecoratedBox>(outer).decoration as ShapeDecoration;
+      expect(decoration.shadows, shadows);
+      // …and that box paints no fill of its own, or it would be blurred.
+      expect(decoration.color, isNull);
+      expect(decoration.gradient, isNull);
+    });
+
+    testWidgets('keeps the bar its size and its labels', (tester) async {
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: (_) {},
+            glass: true,
+          ),
+        ),
+      );
+
+      // The blur moved the padding inside the clip; the bar is laid out
+      // exactly as it is without it.
+      expect(find.text('Home'), findsOneWidget);
+      expect(rectOf(tester, indicator).width, closeTo(70, 0.01));
+    });
+  });
+
   group('NavBarDestination', () {
     test('falls back to the line icon when no fill icon is given', () {
       const destination = NavBarDestination(
@@ -414,6 +598,36 @@ void main() {
       selectedItemColor: Color(0xFF333333),
       unselectedItemColor: Color(0xFF444444),
     );
+
+    test('copyWith carries the bar gradient', () {
+      const sheen = LinearGradient(
+        colors: [Color(0xFF000000), Color(0xFFFFFFFF)],
+      );
+      final copy = theme.copyWith(barGradient: sheen);
+
+      expect(theme.barGradient, isNull);
+      expect(copy.barGradient, sheen);
+      expect(copy.copyWith().barGradient, sheen);
+    });
+
+    test('copyWith carries the glass fields', () {
+      final copy = theme.copyWith(glass: true, glassBlur: 30);
+
+      expect(copy.glass, isTrue);
+      expect(copy.glassBlur, 30);
+      // Unset on the original, and left alone by a copyWith that omits them.
+      expect(theme.glass, isFalse);
+      expect(theme.glassBlur, 20);
+      expect(copy.copyWith().glass, isTrue);
+    });
+
+    test('lerp snaps glass at the midpoint and eases its blur', () {
+      final frosted = theme.copyWith(glass: true, glassBlur: 40);
+
+      expect(theme.lerp(frosted, 0.25).glass, isFalse);
+      expect(theme.lerp(frosted, 0.75).glass, isTrue);
+      expect(theme.lerp(frosted, 0.5).glassBlur, 30);
+    });
 
     test('copyWith keeps unset fields', () {
       final copy = theme.copyWith(indicatorColor: const Color(0xFF999999));

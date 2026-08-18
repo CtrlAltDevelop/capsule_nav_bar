@@ -35,7 +35,7 @@ Or add it to `pubspec.yaml` yourself — it is a runtime dependency:
 
 ```yaml
 dependencies:
-  capsule_nav_bar: ^1.0.0
+  capsule_nav_bar: ^1.1.0
   material_ui: ^1.0.0
 ```
 
@@ -159,9 +159,10 @@ The knobs, in short:
 
 | | |
 |---|---|
-| **Colours** | `barColor`, `indicatorColor`, `selectedItemColor`, `unselectedItemColor`, `scrimColor` |
+| **Colours** | `barColor`, `barGradient`, `indicatorColor`, `selectedItemColor`, `unselectedItemColor`, `scrimColor` |
 | **Type** | `labelStyle`, `selectedLabelStyle`, `fontFamily` |
 | **Shape** | `barRadius`, `indicatorRadius`, `barShape`, `indicatorShape`, `smoothCorners`, `barShadows` |
+| **Glass** | `glass`, `glassBlur` |
 | **Metrics** | `height`, `itemWidth`, `iconSize`, `iconLabelSpacing`, `barPadding`, `itemPadding`, `margin`, `scrimHeight` |
 
 ### Corners
@@ -182,6 +183,54 @@ CapsuleNavBarTheme(
   ),
 );
 ```
+
+### Glass
+
+Set `glass: true` and the bar frosts what passes beneath it — a backdrop blur
+clipped to the capsule, under a translucent fill:
+
+```dart
+CapsuleNavBarTheme(
+  glass: true,
+  glassBlur: 24,
+  // The frost only shows through a see-through bar.
+  barColor: palette.surface.withValues(alpha: 0.6),
+  // …
+);
+```
+
+The order the layers go down in is the whole trick, and it is the one the
+platform chrome uses: shadow, then the clip, then the blur, then the fill and
+the border on top of it. A fill painted *underneath* the blur would be smeared
+along with the content behind and lose its edge; on top, it reads as a
+translucent sheet laid over a blurred backdrop. Which is why the fill has to be
+**translucent** — an opaque `barColor` hides the frost completely — and why
+`barShadows`, painted outside the clip, are never smeared.
+
+For the diagonal sheen a real glass surface catches, give it a gradient
+instead; `barGradient` wins over `barColor`:
+
+```dart
+CapsuleNavBarTheme(
+  glass: true,
+  barGradient: LinearGradient(
+    begin: AlignmentDirectional.topStart,
+    end: AlignmentDirectional.bottomEnd,
+    colors: [
+      palette.surface.withValues(alpha: 0.72),
+      palette.surface.withValues(alpha: 0.42),
+    ],
+  ),
+  // A hairline around the capsule separates it from what it floats over.
+  barShape: RoundedSuperellipseBorder(
+    borderRadius: BorderRadius.circular(999),
+    side: BorderSide(color: palette.border),
+  ),
+);
+```
+
+A `BackdropFilter` is not free on low-end devices, which is why this is off by
+default; `glass: false` gives you back a plain translucent bar.
 
 ### The scrim
 

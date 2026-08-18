@@ -18,6 +18,7 @@ import 'package:material_ui/material_ui.dart';
 class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
   const CapsuleNavBarTheme({
     required this.barColor,
+    this.barGradient,
     required this.indicatorColor,
     required this.selectedItemColor,
     required this.unselectedItemColor,
@@ -29,6 +30,8 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
     this.barShape,
     this.indicatorShape,
     this.smoothCorners = true,
+    this.glass = false,
+    this.glassBlur = 20,
     this.barShadows = const <BoxShadow>[],
     this.barPadding = const EdgeInsets.all(4),
     this.itemPadding = const EdgeInsets.symmetric(horizontal: 8),
@@ -46,6 +49,13 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
   /// Give it an alpha below 1 for the frosted look the bar is built for — it
   /// clips its children, so content scrolling underneath shows through.
   final Color barColor;
+
+  /// Fill of the bar as a gradient, for the diagonal sheen a glass surface
+  /// catches. Wins over [barColor] when set.
+  ///
+  /// Like [barColor] it is painted over the blur when [glass] is set, so keep
+  /// its stops translucent.
+  final Gradient? barGradient;
 
   /// Fill of the indicator (the "pill") that slides behind the selected item.
   final Color indicatorColor;
@@ -95,6 +105,22 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
   /// Drawn by the engine through [RoundedSuperellipseBorder], so it costs no
   /// more than an ordinary [RoundedRectangleBorder].
   final bool smoothCorners;
+
+  /// Whether the bar frosts what is behind it, blurring the content it floats
+  /// over the way iOS' translucent chrome does.
+  ///
+  /// The blur is drawn behind [barColor] and clipped to the bar's shape, so it
+  /// only shows through a translucent fill — give [barColor] an alpha well
+  /// below 1 or the glass is hidden under an opaque slab. It costs a
+  /// [BackdropFilter], which is not free on low-end devices, so it is off by
+  /// default.
+  ///
+  /// [barShadows] are painted outside the clip either way, so they are not
+  /// smeared by the blur.
+  final bool glass;
+
+  /// Blur sigma used when [glass] is set, on both axes.
+  final double glassBlur;
 
   /// Shadows cast by the bar, lifting it off the content behind it.
   final List<BoxShadow> barShadows;
@@ -188,6 +214,7 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
   @override
   CapsuleNavBarTheme copyWith({
     Color? barColor,
+    Gradient? barGradient,
     Color? indicatorColor,
     Color? selectedItemColor,
     Color? unselectedItemColor,
@@ -199,6 +226,8 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
     ShapeBorder? barShape,
     ShapeBorder? indicatorShape,
     bool? smoothCorners,
+    bool? glass,
+    double? glassBlur,
     List<BoxShadow>? barShadows,
     EdgeInsetsGeometry? barPadding,
     EdgeInsetsGeometry? itemPadding,
@@ -211,6 +240,7 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
     double? scrimHeight,
   }) => CapsuleNavBarTheme(
     barColor: barColor ?? this.barColor,
+    barGradient: barGradient ?? this.barGradient,
     indicatorColor: indicatorColor ?? this.indicatorColor,
     selectedItemColor: selectedItemColor ?? this.selectedItemColor,
     unselectedItemColor: unselectedItemColor ?? this.unselectedItemColor,
@@ -222,6 +252,8 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
     barShape: barShape ?? this.barShape,
     indicatorShape: indicatorShape ?? this.indicatorShape,
     smoothCorners: smoothCorners ?? this.smoothCorners,
+    glass: glass ?? this.glass,
+    glassBlur: glassBlur ?? this.glassBlur,
     barShadows: barShadows ?? this.barShadows,
     barPadding: barPadding ?? this.barPadding,
     itemPadding: itemPadding ?? this.itemPadding,
@@ -239,6 +271,7 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
     if (other == null) return this;
     return CapsuleNavBarTheme(
       barColor: Color.lerp(barColor, other.barColor, t) ?? barColor,
+      barGradient: Gradient.lerp(barGradient, other.barGradient, t),
       indicatorColor:
           Color.lerp(indicatorColor, other.indicatorColor, t) ?? indicatorColor,
       selectedItemColor:
@@ -266,6 +299,8 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
       barShape: t < 0.5 ? barShape : other.barShape,
       indicatorShape: t < 0.5 ? indicatorShape : other.indicatorShape,
       smoothCorners: t < 0.5 ? smoothCorners : other.smoothCorners,
+      glass: t < 0.5 ? glass : other.glass,
+      glassBlur: lerpDouble(glassBlur, other.glassBlur, t),
       barShadows:
           BoxShadow.lerpList(barShadows, other.barShadows, t) ?? barShadows,
       barPadding:
