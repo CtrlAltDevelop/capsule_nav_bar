@@ -1,0 +1,38 @@
+name: floating_nav_bar
+description: >-
+  A bottom navigation bar that floats over the content as a rounded capsule,
+  its selection marked by a pill sliding between destinations.
+version: 1.0.0
+homepage: https://github.com/CtrlAltDevelop
+repository: https://github.com/CtrlAltDevelop/floating_nav_bar
+issue_tracker: https://github.com/CtrlAltDevelop/floating_nav_bar/issues
+
+topics:
+  - navigation-bar
+  - bottom-navigation
+  - navigation
+  - widget
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  material_ui: ^1.0.0
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+screenshots:
+  - description: >-
+      The bar floating over page content in light and dark, its scrim fading
+      the content out underneath it.
+    path: screenshots/bar.png
+  - description: >-
+      The pill at three selections, with the selected destination drawn in its
+      filled icon and the rest in their line icon.
+    path: screenshots/states.png
