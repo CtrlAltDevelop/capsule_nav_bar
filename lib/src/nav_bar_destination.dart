@@ -19,6 +19,8 @@ import 'package:flutter/widgets.dart';
 /// With only one weight to hand, pass it as both.
 @immutable
 class NavBarDestination {
+  /// Creates a destination labelled [label], drawn as [lineIcon] unselected
+  /// and [fillIcon] — [lineIcon] again when it is left out — selected.
   const NavBarDestination({
     required this.label,
     required this.lineIcon,

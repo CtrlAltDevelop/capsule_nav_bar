@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Everything a [CapsuleNavBar] needs to paint itself.
@@ -15,7 +16,10 @@ import 'package:material_ui/material_ui.dart';
 /// palette from the ambient [ColorScheme], so the bar looks reasonable with no
 /// setup at all.
 @immutable
-class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
+class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
+    with Diagnosticable {
+  /// Creates a theme for [CapsuleNavBar]. Only the four colours are required;
+  /// every metric and shape has a default.
   const CapsuleNavBarTheme({
     required this.barColor,
     this.barGradient,
@@ -42,7 +46,9 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
     this.iconLabelSpacing = 4,
     this.scrimColor,
     this.scrimHeight = 56,
-  });
+    this.useSafeArea = true,
+    this.maxHeightScale = 1.6,
+  }) : assert(maxHeightScale >= 1, 'maxHeightScale must be at least 1');
 
   /// Fill of the floating bar itself.
   ///
@@ -161,6 +167,23 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
   /// Height of that scrim, measured from the bottom of the bar's own space.
   final double scrimHeight;
 
+  /// Whether the bar keeps clear of the system inset at the bottom of the
+  /// screen — the home indicator, or a gesture bar.
+  ///
+  /// The inset is added to [margin]'s bottom and to [scrimHeight], so the bar
+  /// floats [margin] above the safe area rather than above the screen edge.
+  /// Turn it off when the bar is already inside a [SafeArea], or when it is
+  /// not at the bottom of the screen at all.
+  final bool useSafeArea;
+
+  /// How far [height] is allowed to grow with the platform's text scale.
+  ///
+  /// Labels grow with the ambient [TextScaler], so a fixed-height bar
+  /// ellipsizes them at the larger accessibility sizes. The bar instead grows
+  /// with the scale, up to this multiple of [height]. Set it to `1` to pin the
+  /// bar to [height] and let long labels ellipsize.
+  final double maxHeightScale;
+
   /// The registered [CapsuleNavBarTheme], or one derived from the ambient
   /// [ColorScheme] when the host has not registered an extension.
   static CapsuleNavBarTheme of(BuildContext context) {
@@ -207,6 +230,10 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
     );
   }
 
+  /// [height], grown with [textScaler] up to [maxHeightScale] times itself.
+  double heightFor(TextScaler textScaler) =>
+      height * textScaler.scale(1).clamp(1.0, maxHeightScale);
+
   /// The icon and label colour for a destination in the given state.
   Color colorFor({required bool selected}) =>
       selected ? selectedItemColor : unselectedItemColor;
@@ -238,6 +265,8 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
     double? iconLabelSpacing,
     Color? scrimColor,
     double? scrimHeight,
+    bool? useSafeArea,
+    double? maxHeightScale,
   }) => CapsuleNavBarTheme(
     barColor: barColor ?? this.barColor,
     barGradient: barGradient ?? this.barGradient,
@@ -264,6 +293,8 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
     iconLabelSpacing: iconLabelSpacing ?? this.iconLabelSpacing,
     scrimColor: scrimColor ?? this.scrimColor,
     scrimHeight: scrimHeight ?? this.scrimHeight,
+    useSafeArea: useSafeArea ?? this.useSafeArea,
+    maxHeightScale: maxHeightScale ?? this.maxHeightScale,
   );
 
   @override
@@ -300,7 +331,7 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
       indicatorShape: t < 0.5 ? indicatorShape : other.indicatorShape,
       smoothCorners: t < 0.5 ? smoothCorners : other.smoothCorners,
       glass: t < 0.5 ? glass : other.glass,
-      glassBlur: lerpDouble(glassBlur, other.glassBlur, t),
+      glassBlur: _lerpDouble(glassBlur, other.glassBlur, t),
       barShadows:
           BoxShadow.lerpList(barShadows, other.barShadows, t) ?? barShadows,
       barPadding:
@@ -310,15 +341,152 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme> {
           EdgeInsetsGeometry.lerp(itemPadding, other.itemPadding, t) ??
           itemPadding,
       margin: EdgeInsetsGeometry.lerp(margin, other.margin, t) ?? margin,
-      height: lerpDouble(height, other.height, t),
-      itemWidth: lerpDouble(itemWidth, other.itemWidth, t),
-      iconSize: lerpDouble(iconSize, other.iconSize, t),
-      iconLabelSpacing: lerpDouble(iconLabelSpacing, other.iconLabelSpacing, t),
+      height: _lerpDouble(height, other.height, t),
+      itemWidth: _lerpDouble(itemWidth, other.itemWidth, t),
+      iconSize: _lerpDouble(iconSize, other.iconSize, t),
+      iconLabelSpacing: _lerpDouble(
+        iconLabelSpacing,
+        other.iconLabelSpacing,
+        t,
+      ),
       scrimColor: Color.lerp(scrimColor, other.scrimColor, t),
-      scrimHeight: lerpDouble(scrimHeight, other.scrimHeight, t),
+      scrimHeight: _lerpDouble(scrimHeight, other.scrimHeight, t),
+      useSafeArea: t < 0.5 ? useSafeArea : other.useSafeArea,
+      maxHeightScale: _lerpDouble(maxHeightScale, other.maxHeightScale, t),
     );
   }
 
-  /// [ui.lerpDouble] without the nullable return, since both ends are set.
-  static double lerpDouble(double a, double b, double t) => a + (b - a) * t;
+  /// `ui.lerpDouble` without the nullable return, since both ends are set.
+  static double _lerpDouble(double a, double b, double t) => a + (b - a) * t;
+
+  /// Every field, in declaration order — the one list [operator ==],
+  /// [hashCode] and [debugFillProperties] all read, so none of them can fall
+  /// behind a field added later.
+  List<Object?> get _fields => [
+    barColor,
+    barGradient,
+    indicatorColor,
+    selectedItemColor,
+    unselectedItemColor,
+    labelStyle,
+    selectedLabelStyle,
+    fontFamily,
+    barRadius,
+    indicatorRadius,
+    barShape,
+    indicatorShape,
+    smoothCorners,
+    glass,
+    glassBlur,
+    barPadding,
+    itemPadding,
+    margin,
+    height,
+    itemWidth,
+    iconSize,
+    iconLabelSpacing,
+    scrimColor,
+    scrimHeight,
+    useSafeArea,
+    maxHeightScale,
+  ];
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is CapsuleNavBarTheme &&
+        // The shadow list is compared by value; the rest are immutable.
+        listEquals(other.barShadows, barShadows) &&
+        listEquals(other._fields, _fields);
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(Object.hashAll(_fields), Object.hashAll(barShadows));
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(ColorProperty('barColor', barColor))
+      ..add(
+        DiagnosticsProperty<Gradient>(
+          'barGradient',
+          barGradient,
+          defaultValue: null,
+        ),
+      )
+      ..add(ColorProperty('indicatorColor', indicatorColor))
+      ..add(ColorProperty('selectedItemColor', selectedItemColor))
+      ..add(ColorProperty('unselectedItemColor', unselectedItemColor))
+      ..add(
+        DiagnosticsProperty<TextStyle>(
+          'labelStyle',
+          labelStyle,
+          defaultValue: null,
+        ),
+      )
+      ..add(
+        DiagnosticsProperty<TextStyle>(
+          'selectedLabelStyle',
+          selectedLabelStyle,
+          defaultValue: null,
+        ),
+      )
+      ..add(StringProperty('fontFamily', fontFamily, defaultValue: null))
+      ..add(DiagnosticsProperty<BorderRadiusGeometry>('barRadius', barRadius))
+      ..add(
+        DiagnosticsProperty<BorderRadiusGeometry>(
+          'indicatorRadius',
+          indicatorRadius,
+        ),
+      )
+      ..add(
+        DiagnosticsProperty<ShapeBorder>(
+          'barShape',
+          barShape,
+          defaultValue: null,
+        ),
+      )
+      ..add(
+        DiagnosticsProperty<ShapeBorder>(
+          'indicatorShape',
+          indicatorShape,
+          defaultValue: null,
+        ),
+      )
+      ..add(
+        FlagProperty(
+          'smoothCorners',
+          value: smoothCorners,
+          ifFalse: 'circular corners',
+        ),
+      )
+      ..add(FlagProperty('glass', value: glass, ifTrue: 'frosted'))
+      ..add(DoubleProperty('glassBlur', glassBlur))
+      ..add(
+        IterableProperty<BoxShadow>(
+          'barShadows',
+          barShadows,
+          defaultValue: const <BoxShadow>[],
+        ),
+      )
+      ..add(DiagnosticsProperty<EdgeInsetsGeometry>('barPadding', barPadding))
+      ..add(DiagnosticsProperty<EdgeInsetsGeometry>('itemPadding', itemPadding))
+      ..add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin))
+      ..add(DoubleProperty('height', height))
+      ..add(DoubleProperty('itemWidth', itemWidth))
+      ..add(DoubleProperty('iconSize', iconSize))
+      ..add(DoubleProperty('iconLabelSpacing', iconLabelSpacing))
+      ..add(ColorProperty('scrimColor', scrimColor, defaultValue: null))
+      ..add(DoubleProperty('scrimHeight', scrimHeight))
+      ..add(
+        FlagProperty(
+          'useSafeArea',
+          value: useSafeArea,
+          ifFalse: 'ignores the safe area',
+        ),
+      )
+      ..add(DoubleProperty('maxHeightScale', maxHeightScale));
+  }
 }

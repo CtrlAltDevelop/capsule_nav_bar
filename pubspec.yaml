@@ -2,7 +2,7 @@ name: capsule_nav_bar
 description: >-
   A bottom navigation bar that floats over the content as a rounded capsule,
   its selection marked by a pill sliding between destinations.
-version: 1.1.0
+version: 1.2.0
 homepage: https://github.com/CtrlAltDevelop
 repository: https://github.com/CtrlAltDevelop/capsule_nav_bar
 issue_tracker: https://github.com/CtrlAltDevelop/capsule_nav_bar/issues
@@ -14,13 +14,13 @@ topics:
   - widget
 
 environment:
-  sdk: ^3.13.0
-  flutter: ">=3.47.0"
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  material_ui: ^1.0.0
+  material_ui: ^1.1.0
 
 dev_dependencies:
   flutter_lints: ^6.0.0

@@ -4,22 +4,22 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.13.0
-  flutter: ">=3.47.0"
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
 
 dependencies:
   flutter:
     sdk: flutter
   capsule_nav_bar:
     path: ../
-  material_ui: ^1.0.0
+  material_ui: ^1.1.0
 
 dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
   # Encodes the README's GIF — see tool/record_nav_gif.dart.
-  image: ^4.9.1
+  image: ^4.9.2
 
 flutter:
   uses-material-design: true

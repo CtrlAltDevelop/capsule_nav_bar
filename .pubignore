@@ -1,0 +1,24 @@
+# A .pubignore replaces .gitignore for packaging rather than adding to it, so
+# everything .gitignore keeps out of the repository is repeated here.
+.dart_tool/
+build/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Repository-only beyond that. The two screenshots pubspec.yaml declares must
+# ship; the GIF is README-only, and pub.dev resolves the README's relative
+# links against the repository, so it renders from GitHub without riding along
+# in every `pub get`.
+screenshots/nav.gif
+
+# The diffs a failing golden run leaves behind.
+test/failures/
+
+# CI is not the package.
+.github/

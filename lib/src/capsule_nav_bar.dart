@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'capsule_nav_bar_theme.dart';
@@ -50,6 +51,8 @@ const Duration kCapsuleNavBarDuration = Duration(milliseconds: 300);
 /// The indicator is aligned along the text direction, so the bar reads
 /// correctly under [TextDirection.rtl] with no extra work.
 class CapsuleNavBar extends StatefulWidget {
+  /// Creates a capsule navigation bar over [destinations], highlighting
+  /// [activeIndex] and reporting taps to [onDestinationSelected].
   const CapsuleNavBar({
     super.key,
     required this.destinations,
@@ -76,6 +79,7 @@ class CapsuleNavBar extends StatefulWidget {
     this.selectedItemColor,
     this.unselectedItemColor,
     this.scrimColor,
+    this.useSafeArea,
     this.semanticLabel,
   }) : assert(destinations.length > 0, 'destinations must not be empty');
 
@@ -166,6 +170,10 @@ class CapsuleNavBar extends StatefulWidget {
   /// Overrides [CapsuleNavBarTheme.scrimColor].
   final Color? scrimColor;
 
+  /// Overrides [CapsuleNavBarTheme.useSafeArea] — whether the bar keeps clear
+  /// of the system inset at the bottom of the screen.
+  final bool? useSafeArea;
+
   /// Screen-reader label for the bar as a whole.
   final String? semanticLabel;
 
@@ -186,6 +194,43 @@ class CapsuleNavBar extends StatefulWidget {
 
   @override
   State<CapsuleNavBar> createState() => _CapsuleNavBarState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(IntProperty('activeIndex', activeIndex))
+      ..add(
+        IterableProperty<String>(
+          'destinations',
+          destinations.map((d) => d.label),
+        ),
+      )
+      ..add(
+        DiagnosticsProperty<Duration>(
+          'duration',
+          duration,
+          defaultValue: kCapsuleNavBarDuration,
+        ),
+      )
+      ..add(
+        DiagnosticsProperty<Curve>(
+          'curve',
+          curve,
+          defaultValue: Curves.easeInOut,
+        ),
+      )
+      ..add(FlagProperty('showScrim', value: showScrim, ifFalse: 'no scrim'))
+      ..add(FlagProperty('glass', value: glass ?? false, ifTrue: 'frosted'))
+      ..add(
+        FlagProperty(
+          'useSafeArea',
+          value: useSafeArea ?? true,
+          ifFalse: 'ignores the safe area',
+        ),
+      )
+      ..add(StringProperty('semanticLabel', semanticLabel, defaultValue: null));
+  }
 }
 
 class _CapsuleNavBarState extends State<CapsuleNavBar> {
@@ -231,16 +276,27 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
         selectedItemColor: widget.selectedItemColor,
         unselectedItemColor: widget.unselectedItemColor,
         scrimColor: widget.scrimColor,
+        useSafeArea: widget.useSafeArea,
       );
 
   @override
   Widget build(BuildContext context) {
     final theme = _theme(context);
+    final media = MediaQuery.of(context);
     final direction = Directionality.of(context);
-    final margin = theme.margin.resolve(direction);
     final barPadding = theme.barPadding.resolve(direction);
     final scrimColor = theme.scrimColor;
     final activeIndex = _isValid(_activeIndex) ? _activeIndex : 0;
+
+    // The home indicator (or gesture bar) is added under the bar rather than
+    // eaten out of its margin, so the bar floats the full margin above it.
+    final safeInset = theme.useSafeArea ? media.viewPadding.bottom : 0.0;
+    final margin = theme.margin
+        .resolve(direction)
+        .add(EdgeInsets.only(bottom: safeInset))
+        .resolve(direction);
+    // Labels grow with the text scale, so the bar grows with them.
+    final height = theme.heightFor(media.textScaler);
 
     return Semantics(
       label: widget.semanticLabel,
@@ -260,7 +316,10 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
           return Stack(
             children: [
               if (widget.showScrim && scrimColor != null)
-                _Scrim(color: scrimColor, height: theme.scrimHeight),
+                _Scrim(
+                  color: scrimColor,
+                  height: theme.scrimHeight + safeInset,
+                ),
               Padding(
                 padding: margin,
                 child: Align(
@@ -272,6 +331,7 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
                     duration: widget.duration,
                     curve: widget.curve,
                     width: math.min(wanted, available),
+                    height: height,
                   ),
                 ),
               ),
@@ -323,6 +383,7 @@ class _Bar extends StatelessWidget {
     required this.duration,
     required this.curve,
     required this.width,
+    required this.height,
   });
 
   final CapsuleNavBarTheme theme;
@@ -332,12 +393,13 @@ class _Bar extends StatelessWidget {
   final Duration duration;
   final Curve curve;
   final double width;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    Widget content = Padding(
+    final content = Padding(
       padding: theme.barPadding,
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -378,10 +440,11 @@ class _Bar extends StatelessWidget {
     if (!theme.glass) {
       return Container(
         width: width,
-        height: theme.height,
+        height: height,
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
-          color: theme.barColor,
+          // ShapeDecoration takes one fill or the other, never both.
+          color: theme.barGradient == null ? theme.barColor : null,
           gradient: theme.barGradient,
           shape: theme.resolvedBarShape,
           shadows: theme.barShadows,
@@ -394,7 +457,7 @@ class _Bar extends StatelessWidget {
 
     return Container(
       width: width,
-      height: theme.height,
+      height: height,
       // Clip and shadows only. The shadows fall outside the clip, so the blur
       // below cannot smear them, and the fill is deliberately not painted here
       // — see below. The border comes off this copy for the same reason: it is
@@ -447,10 +510,14 @@ class _Indicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // "Reduce motion" is honoured by snapping the pill into place rather than
+    // sliding it; the selection still reads, it just does not travel.
+    final animate = !MediaQuery.disableAnimationsOf(context);
+
     return Positioned.fill(
       child: RepaintBoundary(
         child: AnimatedAlign(
-          duration: duration,
+          duration: animate ? duration : Duration.zero,
           curve: curve,
           alignment: AlignmentDirectional(alignment, 0),
           child: SizedBox(
@@ -468,6 +535,15 @@ class _Indicator extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The overlay opacity for a tile in the given interaction states, following
+/// Material's own pressed-over-hover-over-focused order.
+double _overlayAlpha(Set<WidgetState> states) {
+  if (states.contains(WidgetState.pressed)) return 0.12;
+  if (states.contains(WidgetState.hovered)) return 0.08;
+  if (states.contains(WidgetState.focused)) return 0.10;
+  return 0;
 }
 
 /// One tappable destination: its icon, its label, and its semantics.
@@ -527,11 +603,24 @@ class _DestinationTile extends StatelessWidget {
       label: destination.semanticLabel ?? destination.label,
       excludeSemantics: true,
       onTap: onTap,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
+      // A transparent Material of its own, so the ink from the tap lands over
+      // the indicator instead of on some far-away ancestor underneath it.
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          // InkWell brings the keyboard with it: the tile takes focus in the
+          // traversal order and answers Enter and Space, which a bare
+          // GestureDetector never did.
+          onTap: () {
+            Feedback.forTap(context);
+            onTap();
+          },
+          customBorder: theme.resolvedIndicatorShape,
+          overlayColor: WidgetStateProperty.resolveWith(
+            (states) => theme
+                .colorFor(selected: selected)
+                .withValues(alpha: _overlayAlpha(states)),
+          ),
           child: content,
         ),
       ),

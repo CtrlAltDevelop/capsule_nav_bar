@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.2.0
+
+- **Fixed:** `barGradient` threw a `ShapeDecoration` assertion unless `glass`
+  was also set — the plain bar passed both a colour and a gradient, which the
+  decoration does not take together.
+- Destinations are keyboard-operable: they take focus in the traversal order and
+  answer Enter and Space, where before only a pointer could reach them. They
+  gain hover, focus and pressed states, clipped to the pill's own shape, and
+  they give the platform's tap feedback.
+- The bar keeps clear of the bottom system inset — the home indicator, or a
+  gesture bar — adding it under `margin` and stretching the scrim over it.
+  `useSafeArea` turns it off, on the theme and per instance.
+- The bar grows with the platform's text scale rather than ellipsizing its
+  labels, capped at `maxHeightScale` times `height`.
+- "Reduce motion" is honoured: the indicator snaps to the selection instead of
+  sliding to it.
+- `CapsuleNavBarTheme` compares by value and describes itself in the devtools,
+  so a theme change no longer rebuilds on identity alone.
+- `CapsuleNavBarTheme.lerpDouble` is private now; it was an internal helper
+  shadowing `dart:ui`'s. **Breaking** only for code that called it directly.
+- Tooling, none of which changes the widget: a CI workflow, goldens covering
+  light, dark, RTL, a gradient fill and a large text scale, stricter analysis
+  (`public_member_api_docs` and the strict language modes among them), and a
+  `.pubignore` that keeps the README's GIF out of the archive — 213 KB now,
+  from 284 KB.
+
 ## 1.1.0
 
 - `glass` — an opt-in backdrop blur behind the bar, for the frosted look, with

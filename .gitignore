@@ -13,3 +13,6 @@ pubspec.lock
 
 # macOS
 .DS_Store
+
+# Golden diffs from a failed run.
+test/failures/

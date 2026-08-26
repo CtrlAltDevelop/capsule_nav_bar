@@ -1,4 +1,5 @@
 import 'package:capsule_nav_bar/capsule_nav_bar.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -372,6 +373,168 @@ void main() {
       expect(find.bySemanticsLabel('Account'), findsOneWidget);
       handle.dispose();
     });
+
+    testWidgets('takes a gradient fill without the glass', (tester) async {
+      const sheen = LinearGradient(
+        colors: [Color(0xFF202020), Color(0xFF404040)],
+      );
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: (_) {},
+            barGradient: sheen,
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      final decoration =
+          tester
+                  .widget<Container>(
+                    find
+                        .ancestor(
+                          of: indicator,
+                          matching: find.byType(Container),
+                        )
+                        .last,
+                  )
+                  .decoration
+              as ShapeDecoration;
+      expect(decoration.gradient, sheen);
+      // ShapeDecoration takes one fill or the other, never both.
+      expect(decoration.color, isNull);
+    });
+  });
+
+  group('accessibility', () {
+    Widget withMedia(Widget child, MediaQueryData data) => MaterialApp(
+      home: MediaQuery(
+        data: data,
+        child: Scaffold(
+          body: Stack(
+            children: [
+              Positioned(left: 0, bottom: 0, width: 390, child: child),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    Widget bar({bool? useSafeArea}) => CapsuleNavBar(
+      destinations: destinations,
+      activeIndex: 0,
+      onDestinationSelected: (_) {},
+      useSafeArea: useSafeArea,
+    );
+
+    testWidgets('floats its margin above the home indicator', (tester) async {
+      const inset = EdgeInsets.only(bottom: 34);
+      await tester.pumpWidget(
+        withMedia(bar(), const MediaQueryData(viewPadding: inset)),
+      );
+      final lifted = rectOf(tester, indicator).bottom;
+
+      await tester.pumpWidget(
+        withMedia(
+          bar(useSafeArea: false),
+          const MediaQueryData(viewPadding: inset),
+        ),
+      );
+      // Ignoring the inset drops the bar the full 34 back down over it.
+      expect(rectOf(tester, indicator).bottom, lifted + 34);
+    });
+
+    testWidgets('stretches the scrim over the inset too', (tester) async {
+      await tester.pumpWidget(
+        withMedia(
+          bar(),
+          const MediaQueryData(viewPadding: EdgeInsets.only(bottom: 34)),
+        ),
+      );
+      // The theme default is 56, plus the inset the bar now covers.
+      expect(rectOf(tester, scrim).height, 56 + 34);
+    });
+
+    testWidgets('grows with the text scale, up to maxHeightScale', (
+      tester,
+    ) async {
+      await tester.pumpWidget(withMedia(bar(), const MediaQueryData()));
+      final plain = rectOf(tester, indicator).height;
+
+      await tester.pumpWidget(
+        withMedia(
+          bar(),
+          const MediaQueryData(textScaler: TextScaler.linear(1.4)),
+        ),
+      );
+      expect(rectOf(tester, indicator).height, greaterThan(plain));
+
+      // Past maxHeightScale (1.6 by default) the bar stops growing.
+      await tester.pumpWidget(
+        withMedia(
+          bar(),
+          const MediaQueryData(textScaler: TextScaler.linear(4)),
+        ),
+      );
+      // The bar caps at 1.6x its 56; barPadding is not scaled with it.
+      const padding = 8.0;
+      expect(
+        rectOf(tester, indicator).height,
+        closeTo((plain + padding) * 1.6 - padding, 0.01),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('snaps the indicator when animations are disabled', (
+      tester,
+    ) async {
+      var index = 0;
+      await tester.pumpWidget(
+        withMedia(
+          StatefulBuilder(
+            builder: (context, setState) => CapsuleNavBar(
+              destinations: destinations,
+              activeIndex: index,
+              onDestinationSelected: (i) => setState(() => index = i),
+            ),
+          ),
+          const MediaQueryData(disableAnimations: true),
+        ),
+      );
+      final start = rectOf(tester, indicator).left;
+
+      await tester.tap(find.text('Account'));
+      await tester.pump();
+      // No frames pumped past the tap: with motion reduced it is already there.
+      expect(rectOf(tester, indicator).left, greaterThan(start));
+    });
+
+    testWidgets('takes focus and answers the keyboard', (tester) async {
+      final taps = <int>[];
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: taps.add,
+          ),
+        ),
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+      expect(
+        FocusManager.instance.primaryFocus?.context,
+        isNotNull,
+        reason: 'a destination should be reachable by keyboard',
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(taps, isNotEmpty);
+    });
   });
 
   group('glass', () {
@@ -687,6 +850,63 @@ void main() {
 
       final scheme = ThemeData().colorScheme;
       expect(resolved.indicatorColor, scheme.primaryContainer);
+    });
+
+    test('compares by value, shadow list included', () {
+      const a = CapsuleNavBarTheme(
+        barColor: Color(0xFF101010),
+        indicatorColor: Color(0xFF202020),
+        selectedItemColor: Color(0xFF303030),
+        unselectedItemColor: Color(0xFF404040),
+        barShadows: [BoxShadow(color: Color(0x33000000), blurRadius: 30)],
+      );
+      const b = CapsuleNavBarTheme(
+        barColor: Color(0xFF101010),
+        indicatorColor: Color(0xFF202020),
+        selectedItemColor: Color(0xFF303030),
+        unselectedItemColor: Color(0xFF404040),
+        barShadows: [BoxShadow(color: Color(0x33000000), blurRadius: 30)],
+      );
+
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+      expect(a, isNot(a.copyWith(glassBlur: 40)));
+      expect(a, isNot(a.copyWith(useSafeArea: false)));
+      expect(
+        a,
+        isNot(a.copyWith(barShadows: const [BoxShadow(blurRadius: 1)])),
+      );
+    });
+
+    test('heightFor caps the growth at maxHeightScale', () {
+      const theme = CapsuleNavBarTheme(
+        barColor: Color(0xFF101010),
+        indicatorColor: Color(0xFF202020),
+        selectedItemColor: Color(0xFF303030),
+        unselectedItemColor: Color(0xFF404040),
+        height: 50,
+        maxHeightScale: 1.5,
+      );
+
+      expect(theme.heightFor(TextScaler.noScaling), 50);
+      expect(theme.heightFor(const TextScaler.linear(1.2)), closeTo(60, 0.01));
+      expect(theme.heightFor(const TextScaler.linear(3)), 75);
+      // A scale below 1 never shrinks the bar.
+      expect(theme.heightFor(const TextScaler.linear(0.5)), 50);
+    });
+
+    test('describes itself for the devtools', () {
+      const theme = CapsuleNavBarTheme(
+        barColor: Color(0xFF101010),
+        indicatorColor: Color(0xFF202020),
+        selectedItemColor: Color(0xFF303030),
+        unselectedItemColor: Color(0xFF404040),
+        glass: true,
+      );
+      final description = theme.toString();
+
+      expect(description, contains('barColor'));
+      expect(description, contains('frosted'));
     });
 
     testWidgets('of returns the registered extension', (tester) async {

@@ -35,8 +35,8 @@ Or add it to `pubspec.yaml` yourself — it is a runtime dependency:
 
 ```yaml
 dependencies:
-  capsule_nav_bar: ^1.1.0
-  material_ui: ^1.0.0
+  capsule_nav_bar: ^1.2.0
+  material_ui: ^1.1.0
 ```
 
 then:
@@ -240,13 +240,29 @@ background to switch it on — usually the same colour as `barColor` at full
 opacity — and `scrimHeight` for how far up it reaches. Pass `showScrim: false`
 to drop it for one bar.
 
+### The safe area
+
+The bar keeps clear of the system inset at the bottom of the screen — the home
+indicator, or a gesture bar — by adding it under `margin`, so the bar floats the
+full margin above the inset rather than sitting on top of it. Set
+`useSafeArea: false` when the bar is already inside a `SafeArea`, or when it is
+not at the bottom of the screen at all.
+
 ## Accessibility & RTL
 
 - Every destination is a `Semantics` button carrying its selected state, with a
   `semanticLabel` per destination when the visible label is too terse to read
   aloud.
+- Destinations take keyboard focus in the traversal order and answer Enter and
+  Space, and show a hover, focus and pressed state clipped to the pill's own
+  shape.
 - Destinations are 48 dp tall at the default `height`, meeting the minimum tap
   target.
+- The bar grows with the platform's text scale so large labels are not
+  ellipsized, up to `maxHeightScale` (1.6x by default) times its `height`. Set
+  it to `1` to pin the bar and let long labels ellipsize instead.
+- With "reduce motion" set the indicator snaps to the selection rather than
+  sliding to it.
 - The indicator is positioned with `AlignmentDirectional`, so it starts from the
   right and slides leftwards under `TextDirection.rtl`.
 
@@ -264,6 +280,25 @@ whenever the bar changes:
 
 ```bash
 cd example && flutter test --update-goldens test/screenshots_test.dart && flutter test tool/record_nav_gif.dart
+```
+
+## Contributing
+
+CI runs on every push and pull request: formatting, analysis, the test suite,
+the example's own tests, and a `pub publish` dry run. The same steps run
+locally:
+
+```bash
+dart format --output=none --set-exit-if-changed lib test example/lib example/test example/tool && flutter analyze && flutter test
+```
+
+The widget's goldens live in `test/goldens/` and are tagged, so they are
+compared on one platform only — rasterisation differs between them, and a
+golden rendered elsewhere would fail on pixels nobody changed. Regenerate them
+after any deliberate visual change:
+
+```bash
+flutter test --update-goldens --tags golden
 ```
 
 ## Licence
