@@ -1,5 +1,10 @@
 # capsule_nav_bar
 
+[![pub package](https://img.shields.io/pub/v/capsule_nav_bar.svg)](https://pub.dev/packages/capsule_nav_bar)
+[![pub points](https://img.shields.io/pub/points/capsule_nav_bar)](https://pub.dev/packages/capsule_nav_bar/score)
+[![CI](https://github.com/CtrlAltDevelop/capsule_nav_bar/actions/workflows/ci.yaml/badge.svg)](https://github.com/CtrlAltDevelop/capsule_nav_bar/actions/workflows/ci.yaml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/CtrlAltDevelop/capsule_nav_bar/blob/main/LICENSE)
+
 A bottom navigation bar that **floats over the content** as a rounded capsule,
 its selection marked by a **pill that slides** between destinations. Each
 destination carries two icons — a line weight and a filled one — and the bar
