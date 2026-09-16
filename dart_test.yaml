@@ -1,0 +1,5 @@
+# Declares the tag `test/goldens_test.dart` carries, so the runner stops
+# warning about it. Goldens run with everything else in CI; the tag is there to
+# filter them locally — `flutter test -x golden` while iterating on the widget.
+tags:
+  golden:

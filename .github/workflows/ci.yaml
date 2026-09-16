@@ -6,9 +6,11 @@ on:
   pull_request:
 
 jobs:
-  analyze:
-    name: Analyze, format and test
-    runs-on: ubuntu-latest
+  ci:
+    name: Test and score
+    # One job, on one platform: goldens are rasterised, so a golden rendered
+    # elsewhere would fail on pixels nobody changed.
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -19,59 +21,34 @@ jobs:
       - run: flutter pub get
       - run: flutter pub get --directory example
 
-      - name: Verify formatting
-        run: >-
-          dart format --set-exit-if-changed --output=none
-          lib test example/lib example/test example/tool
-
-      - name: Analyze
-        run: flutter analyze
-
+      # Formatting and the package's own analysis are part of pana's static
+      # analysis score below; the example is not, so it is checked here.
       - name: Analyze the example
         run: flutter analyze
         working-directory: example
 
-      # Goldens are rasterised, so they are compared on one platform only —
-      # see the `goldens` job below.
       - name: Test
-        run: flutter test --exclude-tags golden --coverage
+        run: flutter test --coverage
 
       - name: Test the example
         run: flutter test
         working-directory: example
 
-      - uses: codecov/codecov-action@v4
-        with:
-          files: coverage/lcov.info
-        continue-on-error: true
-
-  goldens:
-    name: Goldens
-    # Pinned to one platform: a golden rendered on another rasterises
-    # differently and would fail on pixels nobody changed.
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-      - run: flutter pub get
-      - run: flutter test --tags golden
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: golden-failures
           path: test/failures/
 
-  publish:
-    name: Publish dry run
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      # Scores the package the way pub.dev does — publish readiness, docs,
+      # platform support, static analysis and dependency freshness — and fails
+      # on any point lost.
+      - name: Score with pana
+        run: |
+          dart pub global activate pana
+          pana --no-warning --exit-code-threshold 0
+
+      - uses: codecov/codecov-action@v4
         with:
-          channel: stable
-          cache: true
-      - run: flutter pub get
-      - run: flutter pub publish --dry-run
+          files: coverage/lcov.info
+        continue-on-error: true
