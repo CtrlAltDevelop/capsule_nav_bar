@@ -343,6 +343,7 @@ void main() {
           label: 'Search',
           isButton: true,
           isSelected: true,
+          isFocusable: true,
           hasTapAction: true,
           hasSelectedState: true,
         ),
@@ -534,6 +535,43 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
       expect(taps, isNotEmpty);
+    });
+
+    testWidgets('reports the focused destination to a screen reader', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: (_) {},
+          ),
+        ),
+      );
+
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Home')),
+        isNot(matchesSemantics(label: 'Home', isFocused: true)),
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Home')),
+        matchesSemantics(
+          label: 'Home',
+          isButton: true,
+          isSelected: true,
+          isFocusable: true,
+          isFocused: true,
+          hasTapAction: true,
+          hasSelectedState: true,
+        ),
+      );
+      handle.dispose();
     });
   });
 

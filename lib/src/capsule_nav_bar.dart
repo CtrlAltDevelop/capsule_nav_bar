@@ -282,7 +282,6 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
   @override
   Widget build(BuildContext context) {
     final theme = _theme(context);
-    final media = MediaQuery.of(context);
     final direction = Directionality.of(context);
     final barPadding = theme.barPadding.resolve(direction);
     final scrimColor = theme.scrimColor;
@@ -290,13 +289,16 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
 
     // The home indicator (or gesture bar) is added under the bar rather than
     // eaten out of its margin, so the bar floats the full margin above it.
-    final safeInset = theme.useSafeArea ? media.viewPadding.bottom : 0.0;
-    final margin = theme.margin
-        .resolve(direction)
-        .add(EdgeInsets.only(bottom: safeInset))
-        .resolve(direction);
+    // Read through the targeted accessors, so the bar rebuilds when the inset
+    // or the text scale changes and not on every unrelated MediaQuery change —
+    // the keyboard coming up, say.
+    final safeInset = theme.useSafeArea
+        ? MediaQuery.viewPaddingOf(context).bottom
+        : 0.0;
+    final margin =
+        theme.margin.resolve(direction) + EdgeInsets.only(bottom: safeInset);
     // Labels grow with the text scale, so the bar grows with them.
-    final height = theme.heightFor(media.textScaler);
+    final height = theme.heightFor(MediaQuery.textScalerOf(context));
 
     return Semantics(
       label: widget.semanticLabel,
@@ -547,7 +549,7 @@ double _overlayAlpha(Set<WidgetState> states) {
 }
 
 /// One tappable destination: its icon, its label, and its semantics.
-class _DestinationTile extends StatelessWidget {
+class _DestinationTile extends StatefulWidget {
   const _DestinationTile({
     required this.destination,
     required this.theme,
@@ -563,7 +565,26 @@ class _DestinationTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_DestinationTile> createState() => _DestinationTileState();
+}
+
+class _DestinationTileState extends State<_DestinationTile> {
+  // The tile's own semantics exclude its children, so the focus state the
+  // InkWell reports would otherwise never reach a screen reader.
+  bool _focused = false;
+
+  /// Reports the tap, with the platform's own feedback — the one path for the
+  /// pointer, the keyboard and an assistive tap alike.
+  void _activate() {
+    Feedback.forTap(context);
+    widget.onTap();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final destination = widget.destination;
+    final theme = widget.theme;
+    final selected = widget.selected;
     final color = theme.colorFor(selected: selected);
 
     // The pair is centred in the pill and the label is flexible, so a tall
@@ -583,7 +604,10 @@ class _DestinationTile extends StatelessWidget {
           Flexible(
             child: Text(
               destination.label,
-              style: theme.resolvedLabelStyle(textTheme, selected: selected),
+              style: theme.resolvedLabelStyle(
+                widget.textTheme,
+                selected: selected,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
@@ -600,9 +624,11 @@ class _DestinationTile extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
+      focusable: true,
+      focused: _focused,
       label: destination.semanticLabel ?? destination.label,
       excludeSemantics: true,
-      onTap: onTap,
+      onTap: _activate,
       // A transparent Material of its own, so the ink from the tap lands over
       // the indicator instead of on some far-away ancestor underneath it.
       child: Material(
@@ -611,10 +637,8 @@ class _DestinationTile extends StatelessWidget {
           // InkWell brings the keyboard with it: the tile takes focus in the
           // traversal order and answers Enter and Space, which a bare
           // GestureDetector never did.
-          onTap: () {
-            Feedback.forTap(context);
-            onTap();
-          },
+          onTap: _activate,
+          onFocusChange: (focused) => setState(() => _focused = focused),
           customBorder: theme.resolvedIndicatorShape,
           overlayColor: WidgetStateProperty.resolveWith(
             (states) => theme

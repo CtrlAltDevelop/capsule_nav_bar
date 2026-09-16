@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.1
+
+- **Fixed:** a focused destination was announced as an ordinary button. The
+  tile's semantics exclude its children, so the focus state the `InkWell`
+  reports never reached a screen reader; the tile now carries `focusable` and
+  `focused` itself.
+- **Fixed:** an assistive tap went straight to `onDestinationSelected` and
+  skipped the platform's tap feedback, which a pointer or the keyboard got.
+  All three take the one path now.
+- The bar depends on the bottom inset and the text scale specifically rather
+  than on the whole `MediaQuery`, so it no longer rebuilds on every unrelated
+  metric change — the keyboard coming up, say.
+- Dependencies are given as explicit ranges (`material_ui: ">=1.0.0 <2.0.0"`)
+  rather than carets, widening the floor to `material_ui` 1.0.0. The package
+  analyses and its tests pass against that floor.
+
 ## 1.2.0
 
 - **Fixed:** `barGradient` threw a `ShapeDecoration` assertion unless `glass`

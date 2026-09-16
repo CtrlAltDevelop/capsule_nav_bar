@@ -35,8 +35,8 @@ Or add it to `pubspec.yaml` yourself — it is a runtime dependency:
 
 ```yaml
 dependencies:
-  capsule_nav_bar: ^1.2.0
-  material_ui: ^1.1.0
+  capsule_nav_bar: ">=1.2.1 <2.0.0"
+  material_ui: ">=1.0.0 <2.0.0"
 ```
 
 then:
