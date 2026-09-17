@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.2
+
+- No change to the published code. CI moved to the shared reusable workflow in
+  CtrlAltDevelop/ci-workflows: formatting, `analyze --fatal-infos`, the tests,
+  the example, a changelog entry per version, and a pana score with no points
+  lost — the same gate across every package here.
+
 ## 1.2.1
 
 - **Fixed:** a focused destination was announced as an ordinary button. The
