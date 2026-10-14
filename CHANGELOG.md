@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.3.0
+
+- **Fixed:** an unrelated rebuild of the host — a theme or `MediaQuery` change,
+  say — while a navigation was still in flight snapped the highlight back to the
+  old destination, then forward again. The bar now follows `activeIndex` only
+  when the host *changes* it, as documented. A host that refuses a tap must
+  therefore move `activeIndex` itself (or rebuild with a different value) to
+  take the highlight back.
+- **Fixed:** in a bounded slot such as `Scaffold.bottomNavigationBar` the bar
+  stretched to the slot's full height and left the body none. It shrink-wraps
+  its height now, as it already did inside a `Stack`.
+- **Fixed:** a `barColor` set on the widget lost to a `barGradient` registered
+  on the theme, so the override did nothing. It wins now.
+- **Added:** the bar is a `tabBar` and each destination a `tab` to assistive
+  tech, and each announces its position — "Tab 2 of 3", localized, as Material's
+  own bar does. A host with no Material localizations gets no position rather
+  than an error.
+- **Added:** `CapsuleNavBarTheme.copyWith` can unset the nullable fields, with a
+  `clear…` flag for each (`clearScrimColor`, `clearBarGradient`, …). Passing null
+  still means "keep".
+- **Added:** `NavBarDestination.showBadge` and `badgeLabel` — a dot, or a short
+  text such as an unread count, on the destination's icon. The label is read
+  out after the destination's own.
+
 ## 1.2.2
 
 - No change to the published code. CI moved to the shared reusable workflow in

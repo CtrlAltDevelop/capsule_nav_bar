@@ -238,6 +238,9 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
   Color colorFor({required bool selected}) =>
       selected ? selectedItemColor : unselectedItemColor;
 
+  /// A copy with the given fields replaced. A nullable field cannot be set back
+  /// to null by passing null — that means "keep" — so each has a `clear…` flag
+  /// that wins over its value.
   @override
   CapsuleNavBarTheme copyWith({
     Color? barColor,
@@ -267,19 +270,30 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     double? scrimHeight,
     bool? useSafeArea,
     double? maxHeightScale,
+    bool clearBarGradient = false,
+    bool clearLabelStyle = false,
+    bool clearSelectedLabelStyle = false,
+    bool clearFontFamily = false,
+    bool clearBarShape = false,
+    bool clearIndicatorShape = false,
+    bool clearScrimColor = false,
   }) => CapsuleNavBarTheme(
     barColor: barColor ?? this.barColor,
-    barGradient: barGradient ?? this.barGradient,
+    barGradient: clearBarGradient ? null : barGradient ?? this.barGradient,
     indicatorColor: indicatorColor ?? this.indicatorColor,
     selectedItemColor: selectedItemColor ?? this.selectedItemColor,
     unselectedItemColor: unselectedItemColor ?? this.unselectedItemColor,
-    labelStyle: labelStyle ?? this.labelStyle,
-    selectedLabelStyle: selectedLabelStyle ?? this.selectedLabelStyle,
-    fontFamily: fontFamily ?? this.fontFamily,
+    labelStyle: clearLabelStyle ? null : labelStyle ?? this.labelStyle,
+    selectedLabelStyle: clearSelectedLabelStyle
+        ? null
+        : selectedLabelStyle ?? this.selectedLabelStyle,
+    fontFamily: clearFontFamily ? null : fontFamily ?? this.fontFamily,
     barRadius: barRadius ?? this.barRadius,
     indicatorRadius: indicatorRadius ?? this.indicatorRadius,
-    barShape: barShape ?? this.barShape,
-    indicatorShape: indicatorShape ?? this.indicatorShape,
+    barShape: clearBarShape ? null : barShape ?? this.barShape,
+    indicatorShape: clearIndicatorShape
+        ? null
+        : indicatorShape ?? this.indicatorShape,
     smoothCorners: smoothCorners ?? this.smoothCorners,
     glass: glass ?? this.glass,
     glassBlur: glassBlur ?? this.glassBlur,
@@ -291,7 +305,7 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     itemWidth: itemWidth ?? this.itemWidth,
     iconSize: iconSize ?? this.iconSize,
     iconLabelSpacing: iconLabelSpacing ?? this.iconLabelSpacing,
-    scrimColor: scrimColor ?? this.scrimColor,
+    scrimColor: clearScrimColor ? null : scrimColor ?? this.scrimColor,
     scrimHeight: scrimHeight ?? this.scrimHeight,
     useSafeArea: useSafeArea ?? this.useSafeArea,
     maxHeightScale: maxHeightScale ?? this.maxHeightScale,

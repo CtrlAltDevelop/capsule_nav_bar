@@ -1,3 +1,5 @@
+import 'dart:ui' show SemanticsRole;
+
 import 'package:capsule_nav_bar/capsule_nav_bar.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -962,6 +964,184 @@ void main() {
       );
 
       expect(resolved.barColor, theme.barColor);
+    });
+  });
+
+  group('regressions and badges', () {
+    testWidgets('an unrelated rebuild does not snap a tap back', (
+      tester,
+    ) async {
+      late StateSetter rebuild;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                rebuild = setState;
+                return Stack(
+                  children: [
+                    Positioned(
+                      left: 0,
+                      bottom: 0,
+                      width: 390,
+                      // The host is still mid-navigation: index unchanged.
+                      child: CapsuleNavBar(
+                        destinations: destinations,
+                        activeIndex: 0,
+                        onDestinationSelected: (_) {},
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Search'));
+      await tester.pumpAndSettle();
+      final tapped = rectOf(tester, indicator).left;
+
+      rebuild(() {});
+      await tester.pumpAndSettle();
+      expect(rectOf(tester, indicator).left, tapped);
+    });
+
+    testWidgets('does not fill a bounded slot such as bottomNavigationBar', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: const SizedBox.expand(key: Key('body')),
+            bottomNavigationBar: CapsuleNavBar(
+              destinations: destinations,
+              activeIndex: 0,
+              onDestinationSelected: (_) {},
+            ),
+          ),
+        ),
+      );
+      expect(tester.getSize(find.byType(CapsuleNavBar)).height, lessThan(120));
+      expect(
+        tester.getSize(find.byKey(const Key('body'))).height,
+        greaterThan(0),
+      );
+    });
+
+    testWidgets('draws a badge only while showBadge is set', (tester) async {
+      Widget bar({required bool show}) => host(
+        CapsuleNavBar(
+          destinations: [
+            NavBarDestination(
+              label: 'Inbox',
+              lineIcon: Icons.mail_outline,
+              showBadge: show,
+              badgeLabel: '3',
+            ),
+          ],
+          activeIndex: 0,
+          onDestinationSelected: (_) {},
+        ),
+      );
+
+      await tester.pumpWidget(bar(show: false));
+      expect(find.byType(Badge), findsNothing);
+
+      await tester.pumpWidget(bar(show: true));
+      expect(find.byType(Badge), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
+    });
+
+    test('badge fields take part in equality', () {
+      const a = NavBarDestination(label: 'A', lineIcon: Icons.home);
+      const b = NavBarDestination(
+        label: 'A',
+        lineIcon: Icons.home,
+        showBadge: true,
+      );
+      expect(a, isNot(b));
+      expect(a.hashCode, isNot(b.hashCode));
+    });
+  });
+
+  group('semantics and unsetting', () {
+    testWidgets('announces the tab position and roles', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: (_) {},
+          ),
+        ),
+      );
+      final data = tester.getSemantics(find.text('Search')).getSemanticsData();
+      expect(data.label, 'Search');
+      expect(data.hint, 'Tab 2 of 3');
+      expect(data.role, SemanticsRole.tab);
+      handle.dispose();
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    test('copyWith can unset the nullable fields', () {
+      const theme = CapsuleNavBarTheme(
+        barColor: Color(0xFF111111),
+        indicatorColor: Color(0xFF222222),
+        selectedItemColor: Color(0xFF333333),
+        unselectedItemColor: Color(0xFF444444),
+        barGradient: LinearGradient(
+          colors: [Color(0xFF000000), Color(0xFFFFFFFF)],
+        ),
+        scrimColor: Color(0xFF555555),
+        fontFamily: 'Roboto',
+      );
+      final cleared = theme.copyWith(
+        clearBarGradient: true,
+        clearScrimColor: true,
+        clearFontFamily: true,
+      );
+      expect(cleared.barGradient, isNull);
+      expect(cleared.scrimColor, isNull);
+      expect(cleared.fontFamily, isNull);
+      expect(theme.copyWith().scrimColor, theme.scrimColor);
+    });
+
+    testWidgets('a bar colour wins over the theme gradient', (tester) async {
+      const sheen = LinearGradient(
+        colors: [Color(0xFF000000), Color(0xFFFFFFFF)],
+      );
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            onDestinationSelected: (_) {},
+            barColor: const Color(0xFFFF0000),
+          ),
+          theme: const CapsuleNavBarTheme(
+            barColor: Color(0xFF111111),
+            barGradient: sheen,
+            indicatorColor: Color(0xFF222222),
+            selectedItemColor: Color(0xFF333333),
+            unselectedItemColor: Color(0xFF444444),
+          ),
+        ),
+      );
+      final decoration =
+          tester
+                  .widget<Container>(
+                    find
+                        .descendant(
+                          of: find.byType(CapsuleNavBar),
+                          matching: find.byType(Container),
+                        )
+                        .last,
+                  )
+                  .decoration
+              as ShapeDecoration;
+      expect(decoration.color, const Color(0xFFFF0000));
+      expect(decoration.gradient, isNull);
     });
   });
 }

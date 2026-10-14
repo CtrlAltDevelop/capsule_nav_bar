@@ -106,6 +106,21 @@ Scaffold(
 It sizes itself to `destinations.length * itemWidth`, centred in the width it is
 given, and shrinks its destinations only when that width cannot hold them.
 
+### Badges
+
+Set `showBadge` on a destination for a dot on its icon, and `badgeLabel` for a
+short text — an unread count — inside it:
+
+```dart
+const NavBarDestination(
+  label: 'Inbox',
+  lineIcon: Icons.mail_outline,
+  fillIcon: Icons.mail,
+  showBadge: true,
+  badgeLabel: '3',
+)
+```
+
 ### With a router
 
 `onDestinationSelected` owns the navigation, so a `StatefulNavigationShell`

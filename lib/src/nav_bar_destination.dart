@@ -27,6 +27,8 @@ class NavBarDestination {
     IconData? fillIcon,
     this.semanticLabel,
     this.tooltip,
+    this.showBadge = false,
+    this.badgeLabel,
   }) : fillIcon = fillIcon ?? lineIcon;
 
   /// The text shown under the icon.
@@ -44,6 +46,13 @@ class NavBarDestination {
   /// Long-press tooltip. No tooltip is shown when null.
   final String? tooltip;
 
+  /// Whether a badge sits on the icon — a bare dot, or [badgeLabel] in it.
+  final bool showBadge;
+
+  /// Text of the badge, such as an unread count. A dot is drawn when null.
+  /// Only shown while [showBadge] is set, and read out after the label.
+  final String? badgeLabel;
+
   /// The icon for the destination in the given state.
   IconData iconFor({required bool selected}) => selected ? fillIcon : lineIcon;
 
@@ -55,9 +64,18 @@ class NavBarDestination {
           other.lineIcon == lineIcon &&
           other.fillIcon == fillIcon &&
           other.semanticLabel == semanticLabel &&
-          other.tooltip == tooltip;
+          other.tooltip == tooltip &&
+          other.showBadge == showBadge &&
+          other.badgeLabel == badgeLabel;
 
   @override
-  int get hashCode =>
-      Object.hash(label, lineIcon, fillIcon, semanticLabel, tooltip);
+  int get hashCode => Object.hash(
+    label,
+    lineIcon,
+    fillIcon,
+    semanticLabel,
+    tooltip,
+    showBadge,
+    badgeLabel,
+  );
 }

@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'dart:ui' show ImageFilter;
+import 'dart:ui' show ImageFilter, SemanticsRole;
 
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
@@ -239,9 +239,13 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
   @override
   void didUpdateWidget(CapsuleNavBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // An out-of-range index — the `-1` reported while a router sits between
-    // branches — is ignored, so the highlight never blinks off mid-transition.
-    if (_isValid(widget.activeIndex) && widget.activeIndex != _activeIndex) {
+    // Only a change by the host moves the highlight: an unrelated rebuild
+    // mid-navigation carries the old index and must not snap a tap back. An
+    // out-of-range index — the `-1` reported while a router sits between
+    // branches — is ignored, so the highlight never blinks off either.
+    if (widget.activeIndex != oldWidget.activeIndex &&
+        _isValid(widget.activeIndex) &&
+        widget.activeIndex != _activeIndex) {
       setState(() => _activeIndex = widget.activeIndex);
     }
   }
@@ -272,6 +276,8 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
         selectedLabelStyle: widget.selectedLabelStyle,
         barColor: widget.barColor,
         barGradient: widget.barGradient,
+        // The theme's gradient would otherwise win over a colour set here.
+        clearBarGradient: widget.barColor != null && widget.barGradient == null,
         indicatorColor: widget.indicatorColor,
         selectedItemColor: widget.selectedItemColor,
         unselectedItemColor: widget.unselectedItemColor,
@@ -301,6 +307,7 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
     final height = theme.heightFor(MediaQuery.textScalerOf(context));
 
     return Semantics(
+      role: SemanticsRole.tabBar,
       label: widget.semanticLabel,
       container: true,
       explicitChildNodes: true,
@@ -324,7 +331,10 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
                 ),
               Padding(
                 padding: margin,
+                // heightFactor shrink-wraps the bar, so a bounded slot such as
+                // Scaffold.bottomNavigationBar is not filled top to bottom.
                 child: Align(
+                  heightFactor: 1,
                   child: _Bar(
                     theme: theme,
                     destinations: widget.destinations,
@@ -424,6 +434,8 @@ class _Bar extends StatelessWidget {
                     Expanded(
                       child: _DestinationTile(
                         destination: destinations[i],
+                        index: i,
+                        count: destinations.length,
                         theme: theme,
                         textTheme: textTheme,
                         selected: i == activeIndex,
@@ -552,6 +564,8 @@ double _overlayAlpha(Set<WidgetState> states) {
 class _DestinationTile extends StatefulWidget {
   const _DestinationTile({
     required this.destination,
+    required this.index,
+    required this.count,
     required this.theme,
     required this.textTheme,
     required this.selected,
@@ -559,6 +573,8 @@ class _DestinationTile extends StatefulWidget {
   });
 
   final NavBarDestination destination;
+  final int index;
+  final int count;
   final CapsuleNavBarTheme theme;
   final TextTheme textTheme;
   final bool selected;
@@ -590,17 +606,26 @@ class _DestinationTileState extends State<_DestinationTile> {
     // The pair is centred in the pill and the label is flexible, so a tall
     // font or a large text scale eats into the label's own box instead of
     // overflowing the bar.
+    Widget icon = Icon(
+      destination.iconFor(selected: selected),
+      size: theme.iconSize,
+      color: color,
+    );
+    if (destination.showBadge) {
+      final badgeLabel = destination.badgeLabel;
+      icon = Badge(
+        label: badgeLabel == null ? null : Text(badgeLabel),
+        child: icon,
+      );
+    }
+
     Widget content = Padding(
       padding: theme.itemPadding,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: theme.iconLabelSpacing,
         children: [
-          Icon(
-            destination.iconFor(selected: selected),
-            size: theme.iconSize,
-            color: color,
-          ),
+          icon,
           Flexible(
             child: Text(
               destination.label,
@@ -621,12 +646,25 @@ class _DestinationTileState extends State<_DestinationTile> {
       content = Tooltip(message: destination.tooltip!, child: content);
     }
 
+    // "Tab 2 of 3", as Material's own bar announces. The web's tab role already
+    // carries the position; and a host without Material localizations simply
+    // gets no hint rather than an exception.
+    final position = kIsWeb
+        ? null
+        : Localizations.of<MaterialLocalizations>(
+            context,
+            MaterialLocalizations,
+          )?.tabLabel(tabIndex: widget.index + 1, tabCount: widget.count);
+
     return Semantics(
+      role: SemanticsRole.tab,
       button: true,
       selected: selected,
       focusable: true,
       focused: _focused,
       label: destination.semanticLabel ?? destination.label,
+      hint: position,
+      value: destination.showBadge ? destination.badgeLabel : null,
       excludeSemantics: true,
       onTap: _activate,
       // A transparent Material of its own, so the ink from the tap lands over
