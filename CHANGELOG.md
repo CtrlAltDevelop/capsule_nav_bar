@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.4.1
+
+- **Added:** `activeItemWidth` — set it (say, `90`) and the selected destination
+  takes that many logical pixels of the bar with every label kept, its icon and
+  label grown by `expandedIconScale` (1.2) and `expandedLabelScale` (1.1), the
+  rest sharing what is left. It also replaces `activeItemFlex` under
+  `activeLabelOnly`. On the theme and per widget; null keeps equal widths.
+- **Added:** `itemSpacing` — a gap between destinations (default 0, so nothing
+  moves). The bar grows to hold it, and the indicator slides across it, in the
+  equal layout and in the `activeItemWidth` / `activeLabelOnly` one alike.
+- **Added:** `iconLabelSpacing` is now a `CapsuleNavBar` argument too, so the
+  icon-to-label gap can be set on the widget as well as on the theme.
+
 ## 1.4.0
 
 - **Added:** `activeLabelOnly` — only the selected destination shows its label,

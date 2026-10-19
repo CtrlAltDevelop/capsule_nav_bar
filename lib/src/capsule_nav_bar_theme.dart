@@ -42,6 +42,7 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 16),
     this.height = 56,
     this.itemWidth = 70,
+    this.itemSpacing = 0,
     this.iconSize = 20,
     this.iconLabelSpacing = 4,
     this.activeLabelOnly = false,
@@ -50,12 +51,20 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     this.activeLabelScale = 1.05,
     this.activeLabelSpacing = 1,
     this.activeItemFlex = 2,
+    this.activeItemWidth,
+    this.expandedIconScale = 1.2,
+    this.expandedLabelScale = 1.1,
     this.scrimColor,
     this.scrimHeight = 56,
     this.useSafeArea = true,
     this.maxHeightScale = 1.6,
   }) : assert(maxHeightScale >= 1, 'maxHeightScale must be at least 1'),
-       assert(activeItemFlex >= 1, 'activeItemFlex must be at least 1');
+       assert(itemSpacing >= 0, 'itemSpacing must not be negative'),
+       assert(activeItemFlex >= 1, 'activeItemFlex must be at least 1'),
+       assert(
+         activeItemWidth == null || activeItemWidth > 0,
+         'activeItemWidth must be positive',
+       );
 
   /// Fill of the floating bar itself.
   ///
@@ -160,6 +169,11 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
   /// otherwise not fit.
   final double itemWidth;
 
+  /// Gap between one destination and the next, which the bar's width grows to
+  /// hold. The indicator slides across it, so it stays the width of one
+  /// destination.
+  final double itemSpacing;
+
   /// Size of a destination's icon.
   final double iconSize;
 
@@ -191,7 +205,26 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
 
   /// How many shares of the bar's width the selected destination takes when
   /// [activeLabelOnly], against one for each other destination. At least 1.
+  /// Ignored while [activeItemWidth] is set.
   final double activeItemFlex;
+
+  /// Width in logical pixels of the selected destination, the others sharing
+  /// what is left of the bar.
+  ///
+  /// Setting it gives the bar the same sliding, uneven layout as
+  /// [activeLabelOnly], with every label still shown: the selected icon and
+  /// label grow by [expandedIconScale] and [expandedLabelScale]. Under
+  /// [activeLabelOnly] it replaces [activeItemFlex]. Null, the default, keeps
+  /// every destination the same width. Capped at the bar's inner width.
+  final double? activeItemWidth;
+
+  /// Multiple of [iconSize] for the selected icon when [activeItemWidth] is
+  /// set and [activeLabelOnly] is not.
+  final double expandedIconScale;
+
+  /// Multiple of the label's font size for the selected label, on the same
+  /// terms as [expandedIconScale].
+  final double expandedLabelScale;
 
   /// Colour the scrim behind the bar fades up to, masking content that scrolls
   /// under it. No scrim is drawn when null — usually the same colour as
@@ -298,6 +331,7 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     EdgeInsetsGeometry? margin,
     double? height,
     double? itemWidth,
+    double? itemSpacing,
     double? iconSize,
     double? iconLabelSpacing,
     bool? activeLabelOnly,
@@ -306,6 +340,9 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     double? activeLabelScale,
     double? activeLabelSpacing,
     double? activeItemFlex,
+    double? activeItemWidth,
+    double? expandedIconScale,
+    double? expandedLabelScale,
     Color? scrimColor,
     double? scrimHeight,
     bool? useSafeArea,
@@ -317,6 +354,7 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     bool clearBarShape = false,
     bool clearIndicatorShape = false,
     bool clearScrimColor = false,
+    bool clearActiveItemWidth = false,
   }) => CapsuleNavBarTheme(
     barColor: barColor ?? this.barColor,
     barGradient: clearBarGradient ? null : barGradient ?? this.barGradient,
@@ -343,6 +381,7 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     margin: margin ?? this.margin,
     height: height ?? this.height,
     itemWidth: itemWidth ?? this.itemWidth,
+    itemSpacing: itemSpacing ?? this.itemSpacing,
     iconSize: iconSize ?? this.iconSize,
     iconLabelSpacing: iconLabelSpacing ?? this.iconLabelSpacing,
     activeLabelOnly: activeLabelOnly ?? this.activeLabelOnly,
@@ -351,6 +390,11 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     activeLabelScale: activeLabelScale ?? this.activeLabelScale,
     activeLabelSpacing: activeLabelSpacing ?? this.activeLabelSpacing,
     activeItemFlex: activeItemFlex ?? this.activeItemFlex,
+    activeItemWidth: clearActiveItemWidth
+        ? null
+        : activeItemWidth ?? this.activeItemWidth,
+    expandedIconScale: expandedIconScale ?? this.expandedIconScale,
+    expandedLabelScale: expandedLabelScale ?? this.expandedLabelScale,
     scrimColor: clearScrimColor ? null : scrimColor ?? this.scrimColor,
     scrimHeight: scrimHeight ?? this.scrimHeight,
     useSafeArea: useSafeArea ?? this.useSafeArea,
@@ -403,6 +447,7 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
       margin: EdgeInsetsGeometry.lerp(margin, other.margin, t) ?? margin,
       height: _lerpDouble(height, other.height, t),
       itemWidth: _lerpDouble(itemWidth, other.itemWidth, t),
+      itemSpacing: _lerpDouble(itemSpacing, other.itemSpacing, t),
       iconSize: _lerpDouble(iconSize, other.iconSize, t),
       iconLabelSpacing: _lerpDouble(
         iconLabelSpacing,
@@ -427,6 +472,19 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
         t,
       ),
       activeItemFlex: _lerpDouble(activeItemFlex, other.activeItemFlex, t),
+      activeItemWidth: activeItemWidth == null || other.activeItemWidth == null
+          ? (t < 0.5 ? activeItemWidth : other.activeItemWidth)
+          : _lerpDouble(activeItemWidth!, other.activeItemWidth!, t),
+      expandedIconScale: _lerpDouble(
+        expandedIconScale,
+        other.expandedIconScale,
+        t,
+      ),
+      expandedLabelScale: _lerpDouble(
+        expandedLabelScale,
+        other.expandedLabelScale,
+        t,
+      ),
       scrimColor: Color.lerp(scrimColor, other.scrimColor, t),
       scrimHeight: _lerpDouble(scrimHeight, other.scrimHeight, t),
       useSafeArea: t < 0.5 ? useSafeArea : other.useSafeArea,
@@ -461,6 +519,7 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     margin,
     height,
     itemWidth,
+    itemSpacing,
     iconSize,
     iconLabelSpacing,
     activeLabelOnly,
@@ -469,6 +528,9 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     activeLabelScale,
     activeLabelSpacing,
     activeItemFlex,
+    activeItemWidth,
+    expandedIconScale,
+    expandedLabelScale,
     scrimColor,
     scrimHeight,
     useSafeArea,
@@ -560,6 +622,7 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
       ..add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin))
       ..add(DoubleProperty('height', height))
       ..add(DoubleProperty('itemWidth', itemWidth))
+      ..add(DoubleProperty('itemSpacing', itemSpacing))
       ..add(DoubleProperty('iconSize', iconSize))
       ..add(DoubleProperty('iconLabelSpacing', iconLabelSpacing))
       ..add(
@@ -574,6 +637,11 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
       ..add(DoubleProperty('activeLabelScale', activeLabelScale))
       ..add(DoubleProperty('activeLabelSpacing', activeLabelSpacing))
       ..add(DoubleProperty('activeItemFlex', activeItemFlex))
+      ..add(
+        DoubleProperty('activeItemWidth', activeItemWidth, defaultValue: null),
+      )
+      ..add(DoubleProperty('expandedIconScale', expandedIconScale))
+      ..add(DoubleProperty('expandedLabelScale', expandedLabelScale))
       ..add(ColorProperty('scrimColor', scrimColor, defaultValue: null))
       ..add(DoubleProperty('scrimHeight', scrimHeight))
       ..add(

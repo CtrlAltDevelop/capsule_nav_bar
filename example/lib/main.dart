@@ -109,6 +109,7 @@ class _ExamplePageState extends State<ExamplePage> {
               activeIndex: _index,
               onDestinationSelected: (i) => setState(() => _index = i),
               activeLabelOnly: _activeLabelOnly,
+              activeItemWidth: 90,
               glass: _glass,
               // The demo theme's bar is nearly opaque, which would hide the
               // frost — a glass bar has to let what is behind it through.

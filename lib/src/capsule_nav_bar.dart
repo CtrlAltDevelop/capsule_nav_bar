@@ -67,10 +67,15 @@ class CapsuleNavBar extends StatefulWidget {
     this.activeLabelScale,
     this.activeLabelSpacing,
     this.activeItemFlex,
+    this.activeItemWidth,
+    this.expandedIconScale,
+    this.expandedLabelScale,
     this.glass,
     this.glassBlur,
     this.height,
     this.itemWidth,
+    this.itemSpacing,
+    this.iconLabelSpacing,
     this.margin,
     this.barPadding,
     this.barRadius,
@@ -135,6 +140,16 @@ class CapsuleNavBar extends StatefulWidget {
   /// Overrides [CapsuleNavBarTheme.activeItemFlex].
   final double? activeItemFlex;
 
+  /// Overrides [CapsuleNavBarTheme.activeItemWidth] — the selected
+  /// destination's width in logical pixels, with every label kept.
+  final double? activeItemWidth;
+
+  /// Overrides [CapsuleNavBarTheme.expandedIconScale].
+  final double? expandedIconScale;
+
+  /// Overrides [CapsuleNavBarTheme.expandedLabelScale].
+  final double? expandedLabelScale;
+
   /// Overrides [CapsuleNavBarTheme.glass] — whether the bar frosts the content
   /// behind it. Needs a translucent [barColor] to show through.
   final bool? glass;
@@ -147,6 +162,14 @@ class CapsuleNavBar extends StatefulWidget {
 
   /// Overrides [CapsuleNavBarTheme.itemWidth].
   final double? itemWidth;
+
+  /// Overrides [CapsuleNavBarTheme.itemSpacing] — the gap between
+  /// destinations.
+  final double? itemSpacing;
+
+  /// Overrides [CapsuleNavBarTheme.iconLabelSpacing] — the gap between a
+  /// destination's icon and its label.
+  final double? iconLabelSpacing;
 
   /// Overrides [CapsuleNavBarTheme.margin].
   final EdgeInsetsGeometry? margin;
@@ -301,10 +324,15 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
         activeLabelScale: widget.activeLabelScale,
         activeLabelSpacing: widget.activeLabelSpacing,
         activeItemFlex: widget.activeItemFlex,
+        activeItemWidth: widget.activeItemWidth,
+        expandedIconScale: widget.expandedIconScale,
+        expandedLabelScale: widget.expandedLabelScale,
         glass: widget.glass,
         glassBlur: widget.glassBlur,
         height: widget.height,
         itemWidth: widget.itemWidth,
+        itemSpacing: widget.itemSpacing,
+        iconLabelSpacing: widget.iconLabelSpacing,
         margin: widget.margin,
         barPadding: widget.barPadding,
         barRadius: widget.barRadius,
@@ -354,8 +382,10 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
         builder: (context, constraints) {
           // The bar sizes itself to its destinations, and gives up width only
           // when what it is offered cannot hold them.
+          final count = widget.destinations.length;
           final wanted =
-              widget.destinations.length * theme.itemWidth +
+              count * theme.itemWidth +
+              (count - 1) * theme.itemSpacing +
               barPadding.horizontal;
           final available = constraints.hasBoundedWidth
               ? math.max(0.0, constraints.maxWidth - margin.horizontal)
@@ -379,6 +409,8 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
                     destinations: widget.destinations,
                     activeIndex: activeIndex,
                     activeLabelOnly: theme.activeLabelOnly,
+                    expanded:
+                        theme.activeLabelOnly || theme.activeItemWidth != null,
                     onTap: _handleTap,
                     duration: widget.duration,
                     curve: widget.curve,
@@ -432,6 +464,7 @@ class _Bar extends StatelessWidget {
     required this.destinations,
     required this.activeIndex,
     required this.activeLabelOnly,
+    required this.expanded,
     required this.onTap,
     required this.duration,
     required this.curve,
@@ -443,6 +476,7 @@ class _Bar extends StatelessWidget {
   final List<NavBarDestination> destinations;
   final int activeIndex;
   final bool activeLabelOnly;
+  final bool expanded;
   final ValueChanged<int> onTap;
   final Duration duration;
   final Curve curve;
@@ -465,18 +499,32 @@ class _Bar extends StatelessWidget {
             textTheme: textTheme,
             selected: i == activeIndex,
             activeLabelOnly: activeLabelOnly,
+            expanded: expanded,
             duration: duration,
             curve: curve,
             onTap: () => onTap(i),
           );
 
-          // The selected destination takes more shares of the bar than the
-          // rest, so its label has room — "Social Trade" would not fit a plain
-          // equal share. Everything slides together.
-          if (activeLabelOnly) {
-            final flex = theme.activeItemFlex;
-            final unit =
-                constraints.maxWidth / (destinations.length - 1 + flex);
+          // The selected destination takes more of the bar than the rest — a
+          // fixed width, or a number of shares — so its label has room:
+          // "Social Trade" would not fit a plain equal share. Everything slides
+          // together.
+          if (expanded) {
+            final count = destinations.length;
+            final gap = theme.itemSpacing;
+            // What the gaps leave to share out between the destinations.
+            final inner = math.max(
+              0.0,
+              constraints.maxWidth - (count - 1) * gap,
+            );
+            final active = count == 1
+                ? inner
+                : (theme.activeItemWidth ??
+                          theme.activeItemFlex *
+                              inner /
+                              (count - 1 + theme.activeItemFlex))
+                      .clamp(0.0, inner);
+            final unit = count == 1 ? 0.0 : (inner - active) / (count - 1);
             final snap = MediaQuery.disableAnimationsOf(context);
             Widget slot({
               required double start,
@@ -493,14 +541,15 @@ class _Bar extends StatelessWidget {
               bottom: 0,
               child: child,
             );
-            double startOf(int i) =>
-                (i <= activeIndex ? i : i - 1 + flex) * unit;
+            double startOf(int i) => i <= activeIndex
+                ? i * (unit + gap)
+                : (i - 1) * (unit + gap) + active + gap;
             return Stack(
               children: [
                 slot(
                   key: CapsuleNavBar.indicatorKey,
-                  start: activeIndex * unit,
-                  width: flex * unit,
+                  start: activeIndex * (unit + gap),
+                  width: active,
                   child: RepaintBoundary(
                     child: DecoratedBox(
                       decoration: ShapeDecoration(
@@ -513,14 +562,17 @@ class _Bar extends StatelessWidget {
                 for (var i = 0; i < destinations.length; i++)
                   slot(
                     start: startOf(i),
-                    width: i == activeIndex ? flex * unit : unit,
+                    width: i == activeIndex ? active : unit,
                     child: tile(i),
                   ),
               ],
             );
           }
 
-          final itemWidth = constraints.maxWidth / destinations.length;
+          final itemWidth =
+              (constraints.maxWidth -
+                  (destinations.length - 1) * theme.itemSpacing) /
+              destinations.length;
           return Stack(
             children: [
               _Indicator(
@@ -534,6 +586,7 @@ class _Bar extends StatelessWidget {
                 ),
               ),
               Row(
+                spacing: theme.itemSpacing,
                 children: [
                   for (var i = 0; i < destinations.length; i++)
                     Expanded(child: tile(i)),
@@ -665,6 +718,7 @@ class _DestinationTile extends StatefulWidget {
     required this.textTheme,
     required this.selected,
     required this.activeLabelOnly,
+    required this.expanded,
     required this.duration,
     required this.curve,
     required this.onTap,
@@ -677,6 +731,7 @@ class _DestinationTile extends StatefulWidget {
   final TextTheme textTheme;
   final bool selected;
   final bool activeLabelOnly;
+  final bool expanded;
   final Duration duration;
   final Curve curve;
   final VoidCallback onTap;
@@ -712,10 +767,11 @@ class _DestinationTileState extends State<_DestinationTile> {
         ? Duration.zero
         : widget.duration;
     final showLabel = !widget.activeLabelOnly || selected;
-    final iconSize = !widget.activeLabelOnly
-        ? theme.iconSize
-        : theme.iconSize *
-              (selected ? theme.activeIconScale : theme.inactiveIconScale);
+    final iconSize =
+        theme.iconSize *
+        (widget.activeLabelOnly
+            ? (selected ? theme.activeIconScale : theme.inactiveIconScale)
+            : (widget.expanded && selected ? theme.expandedIconScale : 1));
     Widget icon = TweenAnimationBuilder<double>(
       tween: Tween(end: iconSize),
       duration: duration,
@@ -735,24 +791,39 @@ class _DestinationTileState extends State<_DestinationTile> {
     }
 
     final base = theme.resolvedLabelStyle(widget.textTheme, selected: selected);
-    final style = widget.activeLabelOnly && selected
-        ? base.copyWith(
-            fontSize: (base.fontSize ?? 12) * theme.activeLabelScale,
-          )
-        : base;
+    final labelScale = !selected
+        ? 1.0
+        : widget.activeLabelOnly
+        ? theme.activeLabelScale
+        : widget.expanded
+        ? theme.expandedLabelScale
+        : 1.0;
+    final style = labelScale == 1
+        ? base
+        : base.copyWith(fontSize: (base.fontSize ?? 12) * labelScale);
+    final text = Text(
+      destination.label,
+      // The animated style below owns it in the uneven layout, so the label
+      // grows with the selection instead of jumping.
+      style: widget.expanded ? null : style,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
+    );
     final label = Padding(
       padding: EdgeInsets.only(
         top: widget.activeLabelOnly
             ? theme.activeLabelSpacing
             : theme.iconLabelSpacing,
       ),
-      child: Text(
-        destination.label,
-        style: style,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-      ),
+      child: widget.expanded
+          ? AnimatedDefaultTextStyle(
+              style: style,
+              duration: duration,
+              curve: widget.curve,
+              child: text,
+            )
+          : text,
     );
 
     Widget content = Padding(

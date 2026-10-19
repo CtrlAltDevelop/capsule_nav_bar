@@ -46,6 +46,11 @@ void main() {
   final indicator = find.byKey(CapsuleNavBar.indicatorKey);
   final scrim = find.byKey(CapsuleNavBar.scrimKey);
 
+  /// The font size a label is drawn at — its style comes from the nearest
+  /// [DefaultTextStyle] when the bar animates it.
+  double fontOf(WidgetTester tester, String label) =>
+      DefaultTextStyle.of(tester.element(find.text(label))).style.fontSize!;
+
   Rect rectOf(WidgetTester tester, Finder finder) =>
       tester.getRect(finder.first);
 
@@ -75,8 +80,81 @@ void main() {
       // Twice and half the default 20.
       expect(size(Icons.home), 40);
       expect(size(Icons.search_outlined), 10);
-      final base = tester.widget<Text>(find.text('Home')).style!.fontSize!;
-      expect(base, greaterThan(20));
+      expect(fontOf(tester, 'Home'), greaterThan(20));
+    });
+
+    for (final width in [null, 90.0]) {
+      testWidgets('itemSpacing leaves a gap between items (activeItemWidth '
+          '$width)', (tester) async {
+        await tester.pumpWidget(
+          host(
+            CapsuleNavBar(
+              destinations: destinations,
+              activeIndex: 1,
+              itemSpacing: 10,
+              activeItemWidth: width,
+              onDestinationSelected: (_) {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final tiles = [
+          for (var i = 0; i < 3; i++)
+            tester.getRect(find.byType(InkWell).at(i)),
+        ];
+        expect(tiles[1].left - tiles[0].right, closeTo(10, 0.5));
+        expect(tiles[2].left - tiles[1].right, closeTo(10, 0.5));
+        // The indicator sits exactly on the selected tile.
+        expect(rectOf(tester, indicator).left, closeTo(tiles[1].left, 0.5));
+        expect(rectOf(tester, indicator).width, closeTo(tiles[1].width, 0.5));
+      });
+    }
+
+    testWidgets('iconLabelSpacing sets the icon-to-label gap per widget', (
+      tester,
+    ) async {
+      Future<double> gap(double spacing) async {
+        await tester.pumpWidget(
+          host(
+            CapsuleNavBar(
+              destinations: destinations,
+              activeIndex: 0,
+              iconLabelSpacing: spacing,
+              onDestinationSelected: (_) {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        return tester.getTopLeft(find.text('Home')).dy -
+            tester.getBottomLeft(find.byIcon(Icons.home)).dy;
+      }
+
+      expect(await gap(12) - await gap(2), closeTo(10, 0.5));
+    });
+
+    testWidgets('activeItemWidth widens the selected tab, keeping labels', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 1,
+            activeItemWidth: 90,
+            onDestinationSelected: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(rectOf(tester, indicator).width, closeTo(90, 0.5));
+      for (final d in destinations) {
+        expect(find.text(d.label), findsOneWidget);
+      }
+      double size(IconData i) => tester.widget<Icon>(find.byIcon(i)).size!;
+      expect(size(Icons.search), 24); // 20 * 1.2
+      expect(size(Icons.home_outlined), 20);
+      final fonts = [for (final d in destinations) fontOf(tester, d.label)];
+      expect(fonts[1], greaterThan(fonts[0]));
     });
 
     testWidgets('activeLabelOnly shows only the active label, icon sizes', (

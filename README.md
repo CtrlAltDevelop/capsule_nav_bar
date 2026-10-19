@@ -44,6 +44,21 @@ selection moves:
 
 ![Active label only, animated](screenshots/active_label_only.gif)
 
+The gap between destinations (`itemSpacing`) and between an icon and its label
+(`iconLabelSpacing`) are plain arguments on the widget, and fields on the
+theme for an app-wide value:
+
+```dart
+CapsuleNavBar(
+  destinations: destinations,
+  activeIndex: _index,
+  onDestinationSelected: (i) => setState(() => _index = i),
+  itemSpacing: 6,
+  iconLabelSpacing: 2,
+  activeItemWidth: 90, // optional: widen the selected destination
+)
+```
+
 ## Install
 
 ```bash
@@ -54,7 +69,7 @@ Or add it to `pubspec.yaml` yourself — it is a runtime dependency:
 
 ```yaml
 dependencies:
-  capsule_nav_bar: ">=1.4.0 <2.0.0"
+  capsule_nav_bar: ">=1.4.1 <2.0.0"
   material_ui: ">=1.0.0 <2.0.0"
 ```
 
