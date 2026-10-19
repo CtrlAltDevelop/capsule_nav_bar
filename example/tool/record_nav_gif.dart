@@ -3,7 +3,8 @@
 //   cd example && flutter test tool/record_nav_gif.dart
 //
 // It taps the bar through its destinations, grabs a frame every 50ms, and
-// encodes them into ../../screenshots/nav.gif.
+// encodes them into ../../screenshots/nav.gif — and again, in active-label-only
+// mode, into ../../screenshots/active_label_only.gif.
 //
 // It lives outside test/ on purpose: it writes a file rather than asserting
 // anything, so it should not run as part of `flutter test`.
@@ -84,110 +85,125 @@ class _Backdrop extends StatelessWidget {
 void main() {
   setUpAll(_loadFonts);
 
-  testWidgets('record the destination-change GIF', (tester) async {
-    tester.view
-      ..physicalSize = _canvasSize
-      ..devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+  testWidgets('record the destination-change GIF', (tester) {
+    return _record(tester, 'nav.gif', activeLabelOnly: false);
+  });
 
-    var index = 0;
-    await tester.pumpWidget(
-      MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: buildDemoTheme(Brightness.light),
-        home: RepaintBoundary(
-          key: _canvasKey,
-          child: Scaffold(
-            body: StatefulBuilder(
-              builder: (context, setState) => Stack(
-                children: [
-                  const _Backdrop(),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: CapsuleNavBar(
-                      destinations: demoDestinations,
-                      activeIndex: index,
-                      onDestinationSelected: (i) => setState(() => index = i),
-                    ),
+  testWidgets('record the active-label-only GIF', (tester) {
+    return _record(tester, 'active_label_only.gif', activeLabelOnly: true);
+  });
+}
+
+/// Taps through every destination and writes the frames to `../screenshots/`.
+Future<void> _record(
+  WidgetTester tester,
+  String file, {
+  required bool activeLabelOnly,
+}) async {
+  tester.view
+    ..physicalSize = _canvasSize
+    ..devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+
+  var index = 0;
+  await tester.pumpWidget(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: buildDemoTheme(Brightness.light),
+      home: RepaintBoundary(
+        key: _canvasKey,
+        child: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) => Stack(
+              children: [
+                const _Backdrop(),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: CapsuleNavBar(
+                    destinations: demoDestinations,
+                    activeIndex: index,
+                    activeLabelOnly: activeLabelOnly,
+                    onDestinationSelected: (i) => setState(() => index = i),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
       ),
+    ),
+  );
+  await tester.pumpAndSettle();
+
+  final frames = <img.Image>[];
+
+  /// Grabs whatever is on screen right now.
+  Future<void> grab() async {
+    final boundary = tester.renderObject<RenderRepaintBoundary>(
+      find.byKey(_canvasKey),
     );
-    await tester.pumpAndSettle();
-
-    final frames = <img.Image>[];
-
-    /// Grabs whatever is on screen right now.
-    Future<void> grab() async {
-      final boundary = tester.renderObject<RenderRepaintBoundary>(
-        find.byKey(_canvasKey),
+    await tester.runAsync(() async {
+      final image = await boundary.toImage();
+      final width = image.width;
+      final height = image.height;
+      final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      image.dispose();
+      frames.add(
+        img.Image.fromBytes(
+          width: width,
+          height: height,
+          bytes: Uint8List.fromList(data!.buffer.asUint8List()).buffer,
+          numChannels: 4,
+        ),
       );
-      await tester.runAsync(() async {
-        final image = await boundary.toImage();
-        final width = image.width;
-        final height = image.height;
-        final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-        image.dispose();
-        frames.add(
-          img.Image.fromBytes(
-            width: width,
-            height: height,
-            bytes: Uint8List.fromList(data!.buffer.asUint8List()).buffer,
-            numChannels: 4,
-          ),
-        );
-      });
-    }
+    });
+  }
 
-    /// Advances the clock, grabbing a frame per step.
-    Future<void> roll(Duration total) async {
-      for (var t = Duration.zero; t < total; t += _step) {
-        await tester.pump(_step);
-        await grab();
-      }
+  /// Advances the clock, grabbing a frame per step.
+  Future<void> roll(Duration total) async {
+    for (var t = Duration.zero; t < total; t += _step) {
+      await tester.pump(_step);
+      await grab();
     }
+  }
 
-    /// Taps a destination, then records the slide and the pause after it.
-    Future<void> pick(String label) async {
-      await tester.tap(find.text(label));
-      await roll(const Duration(milliseconds: 400));
-      await roll(const Duration(milliseconds: 250));
-    }
-
-    await grab();
+  /// Taps a destination, then records the slide and the pause after it. By
+  /// position, since the other labels are hidden in active-label-only mode.
+  Future<void> pick(int i) async {
+    await tester.tap(find.byType(InkWell).at(i));
+    await roll(const Duration(milliseconds: 400));
     await roll(const Duration(milliseconds: 250));
-    await pick('Trade');
-    await pick('Tools');
-    await pick('Account');
-    await pick('Explore');
-    await pick('Home');
+  }
 
-    // The UI is flat colour: a handful of greys, one purple and the text. So
-    // dithering only adds noise and weight, and a 256-colour palette is far
-    // more than the frames use.
-    final encoder = img.GifEncoder(
-      repeat: 0,
-      numColors: 32,
-      dither: img.DitherKernel.none,
-    )..delay = _step.inMilliseconds ~/ 10;
-    for (final frame in frames) {
-      encoder.addFrame(frame, duration: _step.inMilliseconds ~/ 10);
-    }
+  await grab();
+  await roll(const Duration(milliseconds: 250));
+  await pick(1);
+  await pick(2);
+  await pick(3);
+  await pick(4);
+  await pick(0);
 
-    final bytes = encoder.finish();
-    expect(bytes, isNotNull, reason: 'the encoder produced no GIF');
+  // The UI is flat colour: a handful of greys, one purple and the text. So
+  // dithering only adds noise and weight, and a 256-colour palette is far
+  // more than the frames use.
+  final encoder = img.GifEncoder(
+    repeat: 0,
+    numColors: 32,
+    dither: img.DitherKernel.none,
+  )..delay = _step.inMilliseconds ~/ 10;
+  for (final frame in frames) {
+    encoder.addFrame(frame, duration: _step.inMilliseconds ~/ 10);
+  }
 
-    final out = File('../screenshots/nav.gif')..writeAsBytesSync(bytes!);
-    // ignore: avoid_print — this is a generator script, not a test.
-    print(
-      'wrote ${out.path}: ${frames.length} frames, '
-      '${(bytes.length / 1024).round()} KB',
-    );
-  });
+  final bytes = encoder.finish();
+  expect(bytes, isNotNull, reason: 'the encoder produced no GIF');
+
+  final out = File('../screenshots/$file')..writeAsBytesSync(bytes!);
+  // ignore: avoid_print — this is a generator script, not a test.
+  print(
+    'wrote ${out.path}: ${frames.length} frames, '
+    '${(bytes.length / 1024).round()} KB',
+  );
 }

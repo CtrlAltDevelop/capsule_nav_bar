@@ -9,7 +9,7 @@ const demoDestinations = [
     fillIcon: Icons.grid_view_rounded,
   ),
   NavBarDestination(
-    label: 'Trade',
+    label: 'Social Trade',
     lineIcon: Icons.candlestick_chart_outlined,
     fillIcon: Icons.candlestick_chart,
   ),

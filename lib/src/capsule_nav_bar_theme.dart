@@ -44,11 +44,18 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     this.itemWidth = 70,
     this.iconSize = 20,
     this.iconLabelSpacing = 4,
+    this.activeLabelOnly = false,
+    this.activeIconScale = 1,
+    this.inactiveIconScale = 1.25,
+    this.activeLabelScale = 1.05,
+    this.activeLabelSpacing = 1,
+    this.activeItemFlex = 2,
     this.scrimColor,
     this.scrimHeight = 56,
     this.useSafeArea = true,
     this.maxHeightScale = 1.6,
-  }) : assert(maxHeightScale >= 1, 'maxHeightScale must be at least 1');
+  }) : assert(maxHeightScale >= 1, 'maxHeightScale must be at least 1'),
+       assert(activeItemFlex >= 1, 'activeItemFlex must be at least 1');
 
   /// Fill of the floating bar itself.
   ///
@@ -159,6 +166,33 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
   /// Gap between a destination's icon and its label.
   final double iconLabelSpacing;
 
+  /// Whether only the selected destination shows its label.
+  ///
+  /// The selected destination then takes [activeItemFlex] shares of the bar
+  /// where the others take one, so a long label such as "Social Trade" has room.
+  /// The other destinations draw their icon alone. Off by default; the
+  /// `active…` and `inactiveIconScale` fields below only apply while it is on.
+  final bool activeLabelOnly;
+
+  /// Multiple of [iconSize] for the selected icon when [activeLabelOnly].
+  final double activeIconScale;
+
+  /// Multiple of [iconSize] for the icons that have no label when
+  /// [activeLabelOnly].
+  final double inactiveIconScale;
+
+  /// Multiple of the label's font size for the selected label when
+  /// [activeLabelOnly].
+  final double activeLabelScale;
+
+  /// Gap between the selected icon and its label when [activeLabelOnly], in
+  /// place of [iconLabelSpacing].
+  final double activeLabelSpacing;
+
+  /// How many shares of the bar's width the selected destination takes when
+  /// [activeLabelOnly], against one for each other destination. At least 1.
+  final double activeItemFlex;
+
   /// Colour the scrim behind the bar fades up to, masking content that scrolls
   /// under it. No scrim is drawn when null — usually the same colour as
   /// [barColor], at full opacity.
@@ -266,6 +300,12 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     double? itemWidth,
     double? iconSize,
     double? iconLabelSpacing,
+    bool? activeLabelOnly,
+    double? activeIconScale,
+    double? inactiveIconScale,
+    double? activeLabelScale,
+    double? activeLabelSpacing,
+    double? activeItemFlex,
     Color? scrimColor,
     double? scrimHeight,
     bool? useSafeArea,
@@ -305,6 +345,12 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     itemWidth: itemWidth ?? this.itemWidth,
     iconSize: iconSize ?? this.iconSize,
     iconLabelSpacing: iconLabelSpacing ?? this.iconLabelSpacing,
+    activeLabelOnly: activeLabelOnly ?? this.activeLabelOnly,
+    activeIconScale: activeIconScale ?? this.activeIconScale,
+    inactiveIconScale: inactiveIconScale ?? this.inactiveIconScale,
+    activeLabelScale: activeLabelScale ?? this.activeLabelScale,
+    activeLabelSpacing: activeLabelSpacing ?? this.activeLabelSpacing,
+    activeItemFlex: activeItemFlex ?? this.activeItemFlex,
     scrimColor: clearScrimColor ? null : scrimColor ?? this.scrimColor,
     scrimHeight: scrimHeight ?? this.scrimHeight,
     useSafeArea: useSafeArea ?? this.useSafeArea,
@@ -363,6 +409,24 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
         other.iconLabelSpacing,
         t,
       ),
+      activeLabelOnly: t < 0.5 ? activeLabelOnly : other.activeLabelOnly,
+      activeIconScale: _lerpDouble(activeIconScale, other.activeIconScale, t),
+      inactiveIconScale: _lerpDouble(
+        inactiveIconScale,
+        other.inactiveIconScale,
+        t,
+      ),
+      activeLabelScale: _lerpDouble(
+        activeLabelScale,
+        other.activeLabelScale,
+        t,
+      ),
+      activeLabelSpacing: _lerpDouble(
+        activeLabelSpacing,
+        other.activeLabelSpacing,
+        t,
+      ),
+      activeItemFlex: _lerpDouble(activeItemFlex, other.activeItemFlex, t),
       scrimColor: Color.lerp(scrimColor, other.scrimColor, t),
       scrimHeight: _lerpDouble(scrimHeight, other.scrimHeight, t),
       useSafeArea: t < 0.5 ? useSafeArea : other.useSafeArea,
@@ -399,6 +463,12 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
     itemWidth,
     iconSize,
     iconLabelSpacing,
+    activeLabelOnly,
+    activeIconScale,
+    inactiveIconScale,
+    activeLabelScale,
+    activeLabelSpacing,
+    activeItemFlex,
     scrimColor,
     scrimHeight,
     useSafeArea,
@@ -492,6 +562,18 @@ class CapsuleNavBarTheme extends ThemeExtension<CapsuleNavBarTheme>
       ..add(DoubleProperty('itemWidth', itemWidth))
       ..add(DoubleProperty('iconSize', iconSize))
       ..add(DoubleProperty('iconLabelSpacing', iconLabelSpacing))
+      ..add(
+        FlagProperty(
+          'activeLabelOnly',
+          value: activeLabelOnly,
+          ifTrue: 'active label only',
+        ),
+      )
+      ..add(DoubleProperty('activeIconScale', activeIconScale))
+      ..add(DoubleProperty('inactiveIconScale', inactiveIconScale))
+      ..add(DoubleProperty('activeLabelScale', activeLabelScale))
+      ..add(DoubleProperty('activeLabelSpacing', activeLabelSpacing))
+      ..add(DoubleProperty('activeItemFlex', activeItemFlex))
       ..add(ColorProperty('scrimColor', scrimColor, defaultValue: null))
       ..add(DoubleProperty('scrimHeight', scrimHeight))
       ..add(

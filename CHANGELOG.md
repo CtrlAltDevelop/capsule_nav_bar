@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.0
+
+- **Added:** `activeLabelOnly` — only the selected destination shows its label,
+  in a wider tab with a bigger label, while the others shrink to an icon, so
+  long titles such as "Social Trade" fit. Every metric is customizable, on the
+  theme and per widget: `activeIconScale`, `inactiveIconScale`,
+  `activeLabelScale`, `activeLabelSpacing` and `activeItemFlex`.
+- **Changed:** the example's "Trade" destination is now "Social Trade", to
+  show the long-label case, and the README images and GIF are regenerated.
+
 ## 1.3.0
 
 - **Fixed:** an unrelated rebuild of the host — a theme or `MediaQuery` change,

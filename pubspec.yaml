@@ -2,7 +2,7 @@ name: capsule_nav_bar
 description: >-
   A bottom navigation bar that floats over the content as a rounded capsule,
   its selection marked by a pill sliding between destinations.
-version: 1.3.0
+version: 1.4.0
 homepage: https://github.com/CtrlAltDevelop
 repository: https://github.com/CtrlAltDevelop/capsule_nav_bar
 issue_tracker: https://github.com/CtrlAltDevelop/capsule_nav_bar/issues
@@ -36,3 +36,8 @@ screenshots:
       The pill at three selections, with the selected destination drawn in its
       filled icon and the rest in their line icon.
     path: screenshots/states.png
+  - description: >-
+      Active-label-only mode: the selected destination widens and keeps its
+      label, the others shrink to icons, so a long title such as Social Trade
+      fits.
+    path: screenshots/active_label_only.png

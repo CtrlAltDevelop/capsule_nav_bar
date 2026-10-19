@@ -61,6 +61,12 @@ class CapsuleNavBar extends StatefulWidget {
     this.duration = kCapsuleNavBarDuration,
     this.curve = Curves.easeInOut,
     this.showScrim = true,
+    this.activeLabelOnly,
+    this.activeIconScale,
+    this.inactiveIconScale,
+    this.activeLabelScale,
+    this.activeLabelSpacing,
+    this.activeItemFlex,
     this.glass,
     this.glassBlur,
     this.height,
@@ -108,6 +114,26 @@ class CapsuleNavBar extends StatefulWidget {
   /// Whether to fade a scrim up behind the bar. Needs
   /// [CapsuleNavBarTheme.scrimColor] to be set; without it nothing is drawn.
   final bool showScrim;
+
+  /// Overrides [CapsuleNavBarTheme.activeLabelOnly] — whether only the
+  /// selected destination shows its label, in a wider tab with a bigger label,
+  /// the rest shrinking to an icon.
+  final bool? activeLabelOnly;
+
+  /// Overrides [CapsuleNavBarTheme.activeIconScale].
+  final double? activeIconScale;
+
+  /// Overrides [CapsuleNavBarTheme.inactiveIconScale].
+  final double? inactiveIconScale;
+
+  /// Overrides [CapsuleNavBarTheme.activeLabelScale].
+  final double? activeLabelScale;
+
+  /// Overrides [CapsuleNavBarTheme.activeLabelSpacing].
+  final double? activeLabelSpacing;
+
+  /// Overrides [CapsuleNavBarTheme.activeItemFlex].
+  final double? activeItemFlex;
 
   /// Overrides [CapsuleNavBarTheme.glass] — whether the bar frosts the content
   /// behind it. Needs a translucent [barColor] to show through.
@@ -221,6 +247,13 @@ class CapsuleNavBar extends StatefulWidget {
         ),
       )
       ..add(FlagProperty('showScrim', value: showScrim, ifFalse: 'no scrim'))
+      ..add(
+        FlagProperty(
+          'activeLabelOnly',
+          value: activeLabelOnly ?? false,
+          ifTrue: 'active label only',
+        ),
+      )
       ..add(FlagProperty('glass', value: glass ?? false, ifTrue: 'frosted'))
       ..add(
         FlagProperty(
@@ -262,6 +295,12 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
   /// The theme, with this widget's per-instance overrides applied.
   CapsuleNavBarTheme _theme(BuildContext context) =>
       CapsuleNavBarTheme.of(context).copyWith(
+        activeLabelOnly: widget.activeLabelOnly,
+        activeIconScale: widget.activeIconScale,
+        inactiveIconScale: widget.inactiveIconScale,
+        activeLabelScale: widget.activeLabelScale,
+        activeLabelSpacing: widget.activeLabelSpacing,
+        activeItemFlex: widget.activeItemFlex,
         glass: widget.glass,
         glassBlur: widget.glassBlur,
         height: widget.height,
@@ -339,6 +378,7 @@ class _CapsuleNavBarState extends State<CapsuleNavBar> {
                     theme: theme,
                     destinations: widget.destinations,
                     activeIndex: activeIndex,
+                    activeLabelOnly: theme.activeLabelOnly,
                     onTap: _handleTap,
                     duration: widget.duration,
                     curve: widget.curve,
@@ -391,6 +431,7 @@ class _Bar extends StatelessWidget {
     required this.theme,
     required this.destinations,
     required this.activeIndex,
+    required this.activeLabelOnly,
     required this.onTap,
     required this.duration,
     required this.curve,
@@ -401,6 +442,7 @@ class _Bar extends StatelessWidget {
   final CapsuleNavBarTheme theme;
   final List<NavBarDestination> destinations;
   final int activeIndex;
+  final bool activeLabelOnly;
   final ValueChanged<int> onTap;
   final Duration duration;
   final Curve curve;
@@ -415,6 +457,69 @@ class _Bar extends StatelessWidget {
       padding: theme.barPadding,
       child: LayoutBuilder(
         builder: (context, constraints) {
+          _DestinationTile tile(int i) => _DestinationTile(
+            destination: destinations[i],
+            index: i,
+            count: destinations.length,
+            theme: theme,
+            textTheme: textTheme,
+            selected: i == activeIndex,
+            activeLabelOnly: activeLabelOnly,
+            duration: duration,
+            curve: curve,
+            onTap: () => onTap(i),
+          );
+
+          // The selected destination takes more shares of the bar than the
+          // rest, so its label has room — "Social Trade" would not fit a plain
+          // equal share. Everything slides together.
+          if (activeLabelOnly) {
+            final flex = theme.activeItemFlex;
+            final unit =
+                constraints.maxWidth / (destinations.length - 1 + flex);
+            final snap = MediaQuery.disableAnimationsOf(context);
+            Widget slot({
+              required double start,
+              required double width,
+              required Widget child,
+              Key? key,
+            }) => AnimatedPositionedDirectional(
+              key: key,
+              duration: snap ? Duration.zero : duration,
+              curve: curve,
+              start: start,
+              width: width,
+              top: 0,
+              bottom: 0,
+              child: child,
+            );
+            double startOf(int i) =>
+                (i <= activeIndex ? i : i - 1 + flex) * unit;
+            return Stack(
+              children: [
+                slot(
+                  key: CapsuleNavBar.indicatorKey,
+                  start: activeIndex * unit,
+                  width: flex * unit,
+                  child: RepaintBoundary(
+                    child: DecoratedBox(
+                      decoration: ShapeDecoration(
+                        color: theme.indicatorColor,
+                        shape: theme.resolvedIndicatorShape,
+                      ),
+                    ),
+                  ),
+                ),
+                for (var i = 0; i < destinations.length; i++)
+                  slot(
+                    start: startOf(i),
+                    width: i == activeIndex ? flex * unit : unit,
+                    child: tile(i),
+                  ),
+              ],
+            );
+          }
+
           final itemWidth = constraints.maxWidth / destinations.length;
           return Stack(
             children: [
@@ -431,17 +536,7 @@ class _Bar extends StatelessWidget {
               Row(
                 children: [
                   for (var i = 0; i < destinations.length; i++)
-                    Expanded(
-                      child: _DestinationTile(
-                        destination: destinations[i],
-                        index: i,
-                        count: destinations.length,
-                        theme: theme,
-                        textTheme: textTheme,
-                        selected: i == activeIndex,
-                        onTap: () => onTap(i),
-                      ),
-                    ),
+                    Expanded(child: tile(i)),
                 ],
               ),
             ],
@@ -569,6 +664,9 @@ class _DestinationTile extends StatefulWidget {
     required this.theme,
     required this.textTheme,
     required this.selected,
+    required this.activeLabelOnly,
+    required this.duration,
+    required this.curve,
     required this.onTap,
   });
 
@@ -578,6 +676,9 @@ class _DestinationTile extends StatefulWidget {
   final CapsuleNavBarTheme theme;
   final TextTheme textTheme;
   final bool selected;
+  final bool activeLabelOnly;
+  final Duration duration;
+  final Curve curve;
   final VoidCallback onTap;
 
   @override
@@ -606,10 +707,24 @@ class _DestinationTileState extends State<_DestinationTile> {
     // The pair is centred in the pill and the label is flexible, so a tall
     // font or a large text scale eats into the label's own box instead of
     // overflowing the bar.
-    Widget icon = Icon(
-      destination.iconFor(selected: selected),
-      size: theme.iconSize,
-      color: color,
+    // "Reduce motion" snaps the size and label change, as it does the pill.
+    final duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : widget.duration;
+    final showLabel = !widget.activeLabelOnly || selected;
+    final iconSize = !widget.activeLabelOnly
+        ? theme.iconSize
+        : theme.iconSize *
+              (selected ? theme.activeIconScale : theme.inactiveIconScale);
+    Widget icon = TweenAnimationBuilder<double>(
+      tween: Tween(end: iconSize),
+      duration: duration,
+      curve: widget.curve,
+      builder: (context, size, _) => Icon(
+        destination.iconFor(selected: selected),
+        size: size,
+        color: color,
+      ),
     );
     if (destination.showBadge) {
       final badgeLabel = destination.badgeLabel;
@@ -619,24 +734,58 @@ class _DestinationTileState extends State<_DestinationTile> {
       );
     }
 
+    final base = theme.resolvedLabelStyle(widget.textTheme, selected: selected);
+    final style = widget.activeLabelOnly && selected
+        ? base.copyWith(
+            fontSize: (base.fontSize ?? 12) * theme.activeLabelScale,
+          )
+        : base;
+    final label = Padding(
+      padding: EdgeInsets.only(
+        top: widget.activeLabelOnly
+            ? theme.activeLabelSpacing
+            : theme.iconLabelSpacing,
+      ),
+      child: Text(
+        destination.label,
+        style: style,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+      ),
+    );
+
     Widget content = Padding(
       padding: theme.itemPadding,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        spacing: theme.iconLabelSpacing,
         children: [
           icon,
+          // In the active-only mode the label folds away and fades rather than
+          // popping out. Otherwise it is plain, as there is nothing to animate.
           Flexible(
-            child: Text(
-              destination.label,
-              style: theme.resolvedLabelStyle(
-                widget.textTheme,
-                selected: selected,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
+            child: !widget.activeLabelOnly
+                ? label
+                : AnimatedSwitcher(
+                    duration: duration,
+                    switchInCurve: widget.curve,
+                    switchOutCurve: widget.curve,
+                    transitionBuilder: (child, animation) => SizeTransition(
+                      sizeFactor: animation,
+                      child: FadeTransition(opacity: animation, child: child),
+                    ),
+                    child: showLabel
+                        ? KeyedSubtree(
+                            key: const ValueKey(true),
+                            // SizeTransition start-aligns its child, so the
+                            // label spans the tile to stay centred.
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: label,
+                            ),
+                          )
+                        : const SizedBox.shrink(key: ValueKey(false)),
+                  ),
           ),
         ],
       ),

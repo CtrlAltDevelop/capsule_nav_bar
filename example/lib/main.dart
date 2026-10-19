@@ -61,6 +61,7 @@ class ExamplePage extends StatefulWidget {
 class _ExamplePageState extends State<ExamplePage> {
   int _index = 0;
   bool _glass = false;
+  bool _activeLabelOnly = false;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +84,14 @@ class _ExamplePageState extends State<ExamplePage> {
             icon: Icon(_glass ? Icons.blur_on : Icons.blur_off),
             onPressed: () => setState(() => _glass = !_glass),
           ),
+          IconButton(
+            tooltip: _activeLabelOnly
+                ? 'Active label only on'
+                : 'Active label only off',
+            icon: Icon(_activeLabelOnly ? Icons.label : Icons.label_outline),
+            onPressed: () =>
+                setState(() => _activeLabelOnly = !_activeLabelOnly),
+          ),
         ],
       ),
       // The bar overlaps the content, so it goes in a Stack over it rather
@@ -99,6 +108,7 @@ class _ExamplePageState extends State<ExamplePage> {
               destinations: demoDestinations,
               activeIndex: _index,
               onDestinationSelected: (i) => setState(() => _index = i),
+              activeLabelOnly: _activeLabelOnly,
               glass: _glass,
               // The demo theme's bar is nearly opaque, which would hide the
               // frost — a glass bar has to let what is behind it through.

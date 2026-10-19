@@ -50,6 +50,66 @@ void main() {
       tester.getRect(finder.first);
 
   group('CapsuleNavBar', () {
+    testWidgets('active-label-only metrics are customizable', (tester) async {
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 0,
+            activeLabelOnly: true,
+            activeItemFlex: 3,
+            activeIconScale: 2,
+            inactiveIconScale: 0.5,
+            activeLabelScale: 2,
+            onDestinationSelected: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // 3 shares for the selected tile against 1 for each of the other two.
+      expect(
+        rectOf(tester, indicator).width,
+        closeTo(3 * tester.getSize(find.byType(InkWell).last).width, 1),
+      );
+      double size(IconData i) => tester.widget<Icon>(find.byIcon(i)).size!;
+      // Twice and half the default 20.
+      expect(size(Icons.home), 40);
+      expect(size(Icons.search_outlined), 10);
+      final base = tester.widget<Text>(find.text('Home')).style!.fontSize!;
+      expect(base, greaterThan(20));
+    });
+
+    testWidgets('activeLabelOnly shows only the active label, icon sizes', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        host(
+          CapsuleNavBar(
+            destinations: destinations,
+            activeIndex: 1,
+            activeLabelOnly: true,
+            onDestinationSelected: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Search'), findsOneWidget);
+      expect(find.text('Home'), findsNothing);
+      expect(find.text('Account'), findsNothing);
+      double size(IconData i) => tester.widget<Icon>(find.byIcon(i)).size!;
+      expect(size(Icons.home_outlined), greaterThan(size(Icons.search)));
+      // The selected tile is two shares wide, so a long label has room, and
+      // its label is centred under the icon.
+      expect(
+        rectOf(tester, indicator).width,
+        closeTo(2 * tester.getSize(find.byType(InkWell).first).width, 1),
+      );
+      expect(
+        tester.getCenter(find.text('Search')).dx,
+        closeTo(rectOf(tester, indicator).center.dx, 1),
+      );
+    });
+
     testWidgets('renders every label', (tester) async {
       await tester.pumpWidget(
         host(

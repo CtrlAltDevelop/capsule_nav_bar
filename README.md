@@ -30,6 +30,20 @@ filled icon, the rest in their line icon:
 
 ![The pill at three selections](screenshots/states.png)
 
+Set `activeLabelOnly` and only the selected destination keeps its label: its
+tab widens and its label grows, while the others shrink to a larger icon, so a
+long title such as "Social Trade" fits. The icon and label scales, the gap and
+the width share are all theme fields (`activeIconScale`, `inactiveIconScale`,
+`activeLabelScale`, `activeLabelSpacing`, `activeItemFlex`) that the widget can
+override.
+
+![Active label only, at three selections](screenshots/active_label_only.png)
+
+And in motion — the tab widens, the label folds in and the icons resize as the
+selection moves:
+
+![Active label only, animated](screenshots/active_label_only.gif)
+
 ## Install
 
 ```bash
@@ -40,7 +54,7 @@ Or add it to `pubspec.yaml` yourself — it is a runtime dependency:
 
 ```yaml
 dependencies:
-  capsule_nav_bar: ">=1.2.1 <2.0.0"
+  capsule_nav_bar: ">=1.4.0 <2.0.0"
   material_ui: ">=1.0.0 <2.0.0"
 ```
 

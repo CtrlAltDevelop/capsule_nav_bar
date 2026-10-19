@@ -99,12 +99,13 @@ Widget _strip({
 }
 
 /// The bar with nothing behind it, for showing where the pill sits.
-Widget _bareBar(int activeIndex) => SizedBox(
+Widget _bareBar(int activeIndex, {bool activeLabelOnly = false}) => SizedBox(
   width: _stripWidth,
   child: CapsuleNavBar(
     destinations: demoDestinations,
     activeIndex: activeIndex,
     onDestinationSelected: (_) {},
+    activeLabelOnly: activeLabelOnly,
     showScrim: false,
   ),
 );
@@ -144,6 +145,27 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('../../screenshots/states.png'),
+    );
+  });
+
+  testWidgets('active label only, at three selections', (tester) async {
+    tester.view
+      ..physicalSize = const Size(876, 680)
+      ..devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _canvas([
+        _bareBar(0, activeLabelOnly: true),
+        _bareBar(1, activeLabelOnly: true),
+        _bareBar(3, activeLabelOnly: true),
+      ]),
+    );
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../screenshots/active_label_only.png'),
     );
   });
 }
